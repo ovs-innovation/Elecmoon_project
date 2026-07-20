@@ -10,7 +10,7 @@ import {
   TableFooter,
   TableHeader,
 } from "@windmill/react-ui";
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiEdit, FiPlus, FiTrash2 } from "react-icons/fi";
 
@@ -33,6 +33,11 @@ import CheckBox from "@/components/form/others/CheckBox";
 import CategoryTable from "@/components/category/CategoryTable";
 import NotFound from "@/components/table/NotFound";
 import AnimatedContent from "@/components/common/AnimatedContent";
+import {
+  getAdminRootCategories,
+  flattenCategoryTree,
+  normalizeFlatCategories,
+} from "@/utils/categoryAdmin";
 
 const Category = () => {
   const { toggleDrawer, lang } = useContext(SidebarContext);
@@ -46,6 +51,20 @@ const Category = () => {
     useToggleDrawer();
 
   const { t } = useTranslation();
+
+  const [isCheckAll, setIsCheckAll] = useState(false);
+  const [isCheck, setIsCheck] = useState([]);
+  const [showChild, setShowChild] = useState(true);
+
+  const categorySource = useMemo(() => {
+    if (showChild) {
+      if (Array.isArray(getAllCategories) && getAllCategories.length > 0) {
+        return normalizeFlatCategories(getAllCategories);
+      }
+      return flattenCategoryTree(data || []);
+    }
+    return getAdminRootCategories(data || []);
+  }, [data, getAllCategories, showChild]);
 
   const {
     handleSubmitCategory,
@@ -61,16 +80,11 @@ const Category = () => {
     handleSelectFile,
     handleUploadMultiple,
     handleRemoveSelectFile,
-  } = useFilter(data[0]?.children ? data[0]?.children : data);
-
-  // react hooks
-  const [isCheckAll, setIsCheckAll] = useState(false);
-  const [isCheck, setIsCheck] = useState([]);
-  const [showChild, setShowChild] = useState(false);
+  } = useFilter(categorySource);
 
   const handleSelectAll = () => {
     setIsCheckAll(!isCheckAll);
-    setIsCheck(data[0]?.children.map((li) => li._id));
+    setIsCheck(categorySource.map((li) => li._id));
     if (isCheckAll) {
       setIsCheck([]);
     }
@@ -230,7 +244,7 @@ const Category = () => {
                 <TableCell>{t("catIdTbl")}</TableCell>
                 <TableCell>{t("catIconTbl")}</TableCell>
                 <TableCell>{t("CatTbName")}</TableCell>
-                <TableCell>{t("CatTbDescription")}</TableCell>
+                <TableCell>Parent</TableCell>
                 <TableCell className="text-center">
                   {t("catPublishedTbl")}
                 </TableCell>

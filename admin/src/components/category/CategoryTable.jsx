@@ -1,5 +1,6 @@
 import { Avatar, TableBody, TableCell, TableRow } from "@windmill/react-ui";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import { IoRemoveSharp } from "react-icons/io5";
 
 //internal import
@@ -12,6 +13,23 @@ import CategoryDrawer from "@/components/drawer/CategoryDrawer";
 import ShowHideButton from "@/components/table/ShowHideButton";
 import EditDeleteButton from "@/components/table/EditDeleteButton";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
+
+const PLACEHOLDER =
+  "https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png";
+
+const CategoryIcon = ({ src, alt }) => {
+  const [failed, setFailed] = useState(false);
+  const showSrc = src && !failed ? src : PLACEHOLDER;
+
+  return (
+    <Avatar
+      className="hidden mr-3 md:block bg-gray-50 p-1"
+      src={showSrc}
+      alt={alt || "category"}
+      onError={() => setFailed(true)}
+    />
+  );
+};
 
 const CategoryTable = ({
   data,
@@ -60,62 +78,39 @@ const CategoryTable = ({
               {category?._id?.substring(20, 24)}
             </TableCell>
             <TableCell>
-              {category?.icon ? (
-                <Avatar
-                  className="hidden mr-3 md:block bg-gray-50 p-1"
-                  src={category?.icon}
-                  alt={category?.parent}
-                />
-              ) : (
-                <Avatar
-                  src="https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png"
-                  alt="product"
-                  className="hidden p-1 mr-2 md:block bg-gray-50 shadow-none"
-                />
-              )}
+              <CategoryIcon src={category?.icon} alt={showingTranslateValue(category?.name)} />
             </TableCell>
 
-            <TableCell className="font-medium text-sm ">
-              {category?.children.length > 0 ? (
-                <Link
-                  to={`/categories/${category?._id}`}
-                  className="text-blue-700"
-                >
-                  {showingTranslateValue(category?.name)}
-
-                  <>
-                    {showChild && (
-                      <>
-                        {" "}
-                        <div className="pl-2 ">
-                          {category?.children?.map((child) => (
-                            <div key={child._id}>
-                              <Link
-                                to={`/categories/${child?._id}`}
-                                className="text-blue-700"
-                              >
-                                <div className="flex text-xs items-center  text-blue-800">
-                                  <span className=" text-xs text-gray-500 pr-1">
-                                    <IoRemoveSharp />
-                                  </span>
-                                  <span className="text-gray-500">
-                                    {showingTranslateValue(child.name)}
-                                  </span>
-                                </div>
-                              </Link>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </>
-                </Link>
-              ) : (
-                <span>{showingTranslateValue(category?.name)}</span>
-              )}
+            <TableCell className="font-medium text-sm min-w-[180px]">
+              <div
+                className="flex items-start gap-1"
+                style={{ paddingLeft: `${(category._depth || 0) * 16}px` }}
+              >
+                {(category._depth || 0) > 0 ? (
+                  <IoRemoveSharp className="text-gray-400 mt-0.5 flex-shrink-0" />
+                ) : null}
+                {category?.children?.length > 0 && !showChild ? (
+                  <Link
+                    to={`/categories/${category?._id}`}
+                    className="text-blue-700 hover:underline"
+                  >
+                    {showingTranslateValue(category?.name)}
+                  </Link>
+                ) : (
+                  <span>{showingTranslateValue(category?.name)}</span>
+                )}
+              </div>
+              {showChild && category?.children?.length > 0 ? (
+                <p className="text-[10px] text-gray-400 mt-1 pl-4">
+                  {category.children.length} sub-categor
+                  {category.children.length === 1 ? "y" : "ies"}
+                </p>
+              ) : null}
             </TableCell>
-            <TableCell className="text-sm">
-              {showingTranslateValue(category?.description)}
+            <TableCell className="text-xs text-gray-500 max-w-[140px]">
+              {category._parentLabel ||
+                category.parentName ||
+                (category.parentId ? "—" : "Top level")}
             </TableCell>
 
             <TableCell className="text-center">

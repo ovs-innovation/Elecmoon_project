@@ -45,7 +45,7 @@ const CategoryImage = ({
           sizes={sizes}
           priority={priority}
           loading={priority ? "eager" : "lazy"}
-          className={`${imageClassName} group-hover:scale-[1.03] transition-transform duration-300`}
+          className={`${imageClassName} transition-transform duration-300`}
           onError={() => setImgError(true)}
         />
       )}

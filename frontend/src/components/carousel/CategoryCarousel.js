@@ -1,26 +1,32 @@
 import { useRouter } from "next/router";
 import React, { useContext, useRef } from "react";
 import { IoChevronBackOutline, IoChevronForward } from "react-icons/io5";
+import { FiGrid } from "react-icons/fi";
 import "swiper/css";
 import "swiper/css/navigation";
-import "swiper/css/pagination";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Controller, Navigation, Pagination } from "swiper/modules";
+import { Autoplay, Navigation } from "swiper/modules";
 
 import { getCategorySearchUrl } from "@utils/categoryUrl";
 import { SidebarContext } from "@context/SidebarContext";
 import useUtilsFunction from "@hooks/useUtilsFunction";
+import useCategoryPreviewImages from "@hooks/useCategoryPreviewImages";
 import CategoryCarouselSkeleton from "@components/skeleton/CategoryCarouselSkeleton";
-import CategoryImage from "@components/common/CategoryImage";
+import CategoryCard from "@components/category/CategoryCard";
+import { getCategoryCardImage } from "@utils/categoryDisplayImage";
 
-const CategoryCarousel = ({ activeSlug }) => {
+const CategoryCarousel = ({
+  activeSlug,
+  previewImages: previewImagesProp = null,
+  showHeader = false,
+}) => {
   const router = useRouter();
-
   const prevRef = useRef(null);
   const nextRef = useRef(null);
 
   const { showingTranslateValue } = useUtilsFunction();
   const { categories, isCategoriesLoading } = useContext(SidebarContext);
+  const previewImages = useCategoryPreviewImages(previewImagesProp);
 
   const handleCategoryClick = (category) => {
     const category_name = showingTranslateValue(category?.name);
@@ -45,7 +51,21 @@ const CategoryCarousel = ({ activeSlug }) => {
   }
 
   return (
-    <>
+    <div className="relative">
+      {showHeader ? (
+        <div className="flex items-end justify-between gap-4 mb-4 px-1">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-2 rounded-full bg-[#0b1d3d]/5 text-[10px] font-black text-[#0b1d3d] uppercase tracking-[0.2em]">
+              <FiGrid className="w-3 h-3" />
+              Categories
+            </div>
+            <h2 className="text-lg sm:text-xl font-black text-[#0b1d3d] tracking-tight">
+              Browse by Category
+            </h2>
+          </div>
+        </div>
+      ) : null}
+
       <Swiper
         onInit={(swiper) => {
           swiper.params.navigation.prevEl = prevRef.current;
@@ -54,102 +74,65 @@ const CategoryCarousel = ({ activeSlug }) => {
           swiper.navigation.update();
         }}
         autoplay={{
-          delay: 5000,
+          delay: 5500,
           disableOnInteraction: false,
+          pauseOnMouseEnter: true,
         }}
-        spaceBetween={20}
-        navigation={true}
-        allowTouchMove={true}
+        spaceBetween={16}
+        navigation
+        allowTouchMove
         loop={enableLoop}
         breakpoints={{
-          320: {
-            slidesPerView: 1.2,
-            spaceBetween: 14,
-          },
-          480: {
-            slidesPerView: 1.6,
-            spaceBetween: 16,
-          },
-          640: {
-            slidesPerView: 2.2,
-            spaceBetween: 18,
-          },
-          860: {
-            slidesPerView: 2.8,
-            spaceBetween: 20,
-          },
-          1024: {
-            slidesPerView: 3.5,
-            spaceBetween: 22,
-          },
-          1280: {
-            slidesPerView: 4.2,
-            spaceBetween: 24,
-          },
-          1536: {
-            slidesPerView: 5,
-            spaceBetween: 26,
-          },
+          320: { slidesPerView: 1.35, spaceBetween: 12 },
+          480: { slidesPerView: 1.75, spaceBetween: 14 },
+          640: { slidesPerView: 2.35, spaceBetween: 16 },
+          860: { slidesPerView: 3, spaceBetween: 18 },
+          1024: { slidesPerView: 3.75, spaceBetween: 20 },
+          1280: { slidesPerView: 4, spaceBetween: 22 },
+          1536: { slidesPerView: 4.75, spaceBetween: 24 },
         }}
-        modules={[Autoplay, Navigation, Pagination, Controller]}
-        className="mySwiper category-slider my-10"
+        modules={[Autoplay, Navigation]}
+        className="mySwiper category-slider !pb-2"
       >
         {categories.map((category) => {
+          const catName = showingTranslateValue(category?.name);
           const catSlug =
             category?.slug ||
-            showingTranslateValue(category?.name)
-              ?.toLowerCase()
-              .replace(/[^A-Z0-9]+/gi, "-");
+            catName?.toLowerCase().replace(/[^A-Z0-9]+/gi, "-");
           const isActive =
             activeSlug === catSlug ||
             router.query._id === category?._id ||
             (router.query.category &&
-              showingTranslateValue(category?.name)
-                ?.toLowerCase()
-                .replace(/[^A-Z0-9]+/gi, "-") === router.query.category);
+              catName?.toLowerCase().replace(/[^A-Z0-9]+/gi, "-") ===
+                router.query.category);
+
+          const productImage = previewImages[String(category._id)];
+          const cardImage = getCategoryCardImage(category, previewImages);
+          const fromProduct = Boolean(productImage && productImage === cardImage);
+
           return (
-            <SwiperSlide key={category._id} className="group px-2 py-3">
-              <div
+            <SwiperSlide key={category._id} className="!h-auto py-2 px-1">
+              <CategoryCard
+                category={category}
+                name={catName}
+                imageSrc={cardImage}
+                isActive={isActive}
+                fromProduct={fromProduct}
                 onClick={() => handleCategoryClick(category)}
                 onMouseEnter={() => handleCategoryHover(category)}
-                onTouchStart={() => handleCategoryHover(category)}
-                className={`flex flex-col cursor-pointer bg-white rounded-2xl border overflow-hidden transition-all duration-300 w-full min-h-[240px] sm:min-h-[260px] md:min-h-[280px] mx-auto hover:shadow-[0_16px_48px_rgba(11,29,61,0.12)] sm:hover:-translate-y-1 ${
-                  isActive
-                    ? "border-[#A821A8] shadow-md ring-1 ring-[#A821A8]/20"
-                    : "border-gray-100 hover:border-[#A821A8]/25 shadow-sm"
-                }`}
-              >
-                <CategoryImage
-                  src={category?.icon}
-                  alt={showingTranslateValue(category?.name) || "category"}
-                  className="w-full flex-[4] min-h-0 rounded-none"
-                  aspectClass="aspect-[4/3]"
-                  imageClassName="object-contain p-2 sm:p-3 group-hover:scale-[1.02] transition-transform duration-300"
-                  sizes="(max-width: 640px) 70vw, (max-width: 1024px) 35vw, 280px"
-                  optimizeWidth={480}
-                />
-
-                <div className="flex-[1] flex items-center justify-center px-3 py-3 sm:px-4 sm:py-4 border-t border-gray-50 bg-white">
-                  <h3
-                    className={`text-[11px] sm:text-xs md:text-sm font-black uppercase tracking-wide text-center line-clamp-2 leading-snug transition-colors duration-200 ${
-                      isActive ? "text-[#A821A8]" : "text-gray-700 group-hover:text-[#A821A8]"
-                    }`}
-                  >
-                    {showingTranslateValue(category?.name)}
-                  </h3>
-                </div>
-              </div>
+              />
             </SwiperSlide>
           );
         })}
-        <button ref={prevRef} className="prev">
+
+        <button ref={prevRef} className="prev" type="button" aria-label="Previous categories">
           <IoChevronBackOutline />
         </button>
-        <button ref={nextRef} className="next">
+        <button ref={nextRef} className="next" type="button" aria-label="Next categories">
           <IoChevronForward />
         </button>
       </Swiper>
-    </>
+    </div>
   );
 };
 

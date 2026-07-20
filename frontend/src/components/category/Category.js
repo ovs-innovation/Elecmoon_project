@@ -6,7 +6,7 @@ import { IoClose } from "react-icons/io5";
 //internal import
 import { pages } from "@utils/data";
 import { SidebarContext } from "@context/SidebarContext";
-import CategoryCard from "@components/category/CategoryCard";
+import CategoryDrawerItem from "@components/category/CategoryDrawerItem";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const CategoryDrawerSkeleton = () => (
@@ -78,7 +78,7 @@ const Category = () => {
               });
 
               return filtered.map((category) => (
-                <CategoryCard
+                <CategoryDrawerItem
                   key={category._id}
                   id={category._id}
                   icon={category.icon}

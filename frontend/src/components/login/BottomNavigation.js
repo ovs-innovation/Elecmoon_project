@@ -3,14 +3,20 @@ import { ImFacebook, ImGithub, ImGoogle } from "react-icons/im";
 import { signIn } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
 
-//internal imports
 import SettingServices from "@services/SettingServices";
+import {
+  appendRedirectUrl,
+  getSafeRedirectUrl,
+} from "@utils/authRedirect";
 
-const BottomNavigation = ({ or, route, desc, pageName, loginTitle }) => {
+const BottomNavigation = ({ or, route, desc, pageName, loginTitle, redirectUrl }) => {
   const buttonStyles = `
     text-sm inline-flex items-center cursor-pointer transition ease-in-out duration-300 font-semibold text-center justify-center rounded-md focus:outline-none shadow-sm
     px-3 py-4 h-12 w-full mb-6 mr-2
   `;
+
+  const authCallbackUrl = getSafeRedirectUrl(redirectUrl, "/user/dashboard");
+  const linkedRoute = appendRedirectUrl(route, redirectUrl);
 
   const {
     error,
@@ -19,7 +25,7 @@ const BottomNavigation = ({ or, route, desc, pageName, loginTitle }) => {
   } = useQuery({
     queryKey: ["storeSetting"],
     queryFn: async () => await SettingServices.getStoreSetting(),
-    staleTime: 4 * 60 * 1000, // Api request after 4 minutes
+    staleTime: 4 * 60 * 1000,
   });
 
   return (
@@ -36,7 +42,7 @@ const BottomNavigation = ({ or, route, desc, pageName, loginTitle }) => {
             <button
               onClick={() =>
                 signIn("google", {
-                  callbackUrl: "/user/dashboard",
+                  callbackUrl: authCallbackUrl,
                   redirect: true,
                 })
               }
@@ -52,7 +58,7 @@ const BottomNavigation = ({ or, route, desc, pageName, loginTitle }) => {
             <button
               onClick={() =>
                 signIn("facebook", {
-                  callbackUrl: "/user/dashboard",
+                  callbackUrl: authCallbackUrl,
                   redirect: true,
                 })
               }
@@ -68,7 +74,7 @@ const BottomNavigation = ({ or, route, desc, pageName, loginTitle }) => {
             <button
               onClick={() =>
                 signIn("github", {
-                  callbackUrl: "/user/dashboard",
+                  callbackUrl: authCallbackUrl,
                   redirect: true,
                 })
               }
@@ -87,7 +93,7 @@ const BottomNavigation = ({ or, route, desc, pageName, loginTitle }) => {
         <div className="text-gray-500 mt-2.5">
           {desc ? "Already have an account?" : "Don't have an account?"}
           <Link
-            href={route}
+            href={linkedRoute}
             className="text-gray-800 hover:text-cyan-500 font-bold mx-2"
           >
             <span className="capitalize">{pageName}</span>

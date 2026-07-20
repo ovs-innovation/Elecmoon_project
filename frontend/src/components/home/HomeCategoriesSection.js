@@ -3,24 +3,35 @@ import Link from "next/link";
 import { FiArrowRight, FiGrid } from "react-icons/fi";
 import { SidebarContext } from "@context/SidebarContext";
 import useUtilsFunction from "@hooks/useUtilsFunction";
+import useCategoryPreviewImages from "@hooks/useCategoryPreviewImages";
 import { getCategorySearchUrl } from "@utils/categoryUrl";
-import CategoryImage from "@components/common/CategoryImage";
+import CategoryCard from "@components/category/CategoryCard";
+import { getCategoryCardImage } from "@utils/categoryDisplayImage";
 
 const HomeCategoriesSection = () => {
   const { categories, isCategoriesLoading } = useContext(SidebarContext);
   const { showingTranslateValue } = useUtilsFunction();
+  const previewImages = useCategoryPreviewImages();
 
   if (isCategoriesLoading) {
     return (
       <section className="bg-gray-50 py-10 lg:py-14">
-        <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-12">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-10">
           <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-8" />
-          <div className="flex flex-nowrap gap-4 overflow-hidden">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 lg:gap-5">
             {Array.from({ length: 7 }).map((_, i) => (
               <div
                 key={i}
-                className="flex-shrink-0 w-[140px] sm:w-[160px] lg:flex-1 min-h-[200px] bg-white rounded-2xl animate-pulse border border-gray-100"
-              />
+                className="min-h-[248px] bg-white rounded-2xl animate-pulse border border-gray-100 overflow-hidden"
+              >
+                <div className="p-3 pb-1">
+                  <div className="aspect-[5/4] bg-gray-100 rounded-xl" />
+                </div>
+                <div className="px-4 py-3 border-t border-gray-50">
+                  <div className="h-3 bg-gray-100 rounded w-3/4 mb-2" />
+                  <div className="h-2 bg-gray-50 rounded w-1/3" />
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -32,7 +43,7 @@ const HomeCategoriesSection = () => {
 
   return (
     <section className="bg-gray-50 py-10 lg:py-14 border-y border-gray-100">
-      <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-12">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-10">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 rounded-full bg-[#0b1d3d]/5 text-[10px] font-black text-[#0b1d3d] uppercase tracking-[0.2em]">
@@ -43,7 +54,7 @@ const HomeCategoriesSection = () => {
               Browse Our Product Categories
             </h2>
             <p className="text-gray-500 text-sm mt-2 max-w-xl">
-              Electronics, batteries, components and industrial supplies — explore by category.
+              Batteries, BMS, cells and components — pick a category to see related products.
             </p>
           </div>
           <Link
@@ -54,33 +65,25 @@ const HomeCategoriesSection = () => {
           </Link>
         </div>
 
-        <div className="flex flex-nowrap gap-3 sm:gap-4 overflow-x-auto pb-1 snap-x snap-mandatory lg:overflow-visible scrollbar-thin">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 lg:gap-5">
           {categories.map((cat) => {
             const name = showingTranslateValue(cat.name);
             if (!name) return null;
             const href = getCategorySearchUrl(cat._id, name, cat.slug);
+            const productImage = previewImages[String(cat._id)];
+            const cardImage = getCategoryCardImage(cat, previewImages);
+            const fromProduct = Boolean(productImage && productImage === cardImage);
 
             return (
-              <Link
+              <CategoryCard
                 key={cat._id}
+                category={cat}
+                name={name}
+                imageSrc={cardImage}
                 href={href}
-                className="group flex flex-col flex-shrink-0 w-[42%] xs:w-[38%] sm:w-[28%] md:w-[22%] lg:flex-1 lg:min-w-0 lg:w-auto snap-start min-h-[200px] sm:min-h-[220px] bg-white rounded-2xl border border-gray-100 overflow-hidden text-center hover:shadow-[0_16px_48px_rgba(11,29,61,0.12)] sm:hover:-translate-y-1 hover:border-[#0b1d3d]/15 transition-all duration-300"
-              >
-                <CategoryImage
-                  src={cat.icon}
-                  alt={name}
-                  className="w-full flex-[4] min-h-0 rounded-none"
-                  aspectClass="aspect-[4/3]"
-                  imageClassName="object-contain p-2 sm:p-3 group-hover:scale-[1.02] transition-transform duration-300"
-                  sizes="(max-width: 1024px) 40vw, 180px"
-                  optimizeWidth={480}
-                />
-                <div className="flex-[1] flex items-center justify-center px-2 py-3 sm:px-3 border-t border-gray-50">
-                  <h3 className="text-[10px] sm:text-[11px] font-black text-gray-800 group-hover:text-[#0b1d3d] leading-snug line-clamp-2 uppercase tracking-wide">
-                    {name}
-                  </h3>
-                </div>
-              </Link>
+                fromProduct={fromProduct}
+                compact={categories.length >= 6}
+              />
             );
           })}
         </div>

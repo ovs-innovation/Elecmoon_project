@@ -6,7 +6,6 @@ import useTranslation from "next-translate/useTranslation";
 // internal import
 import Layout from "@layout/Layout";
 import useFilter from "@hooks/useFilter";
-import CardSlider from "@components/cta-card/CardSlider";
 import ProductServices from "@services/ProductServices";
 import ProductCard from "@components/product/ProductCard";
 import ProductEnquiryModal from "@components/modal/ProductEnquiryModal";
@@ -48,18 +47,14 @@ const Search = ({ products, attributes }) => {
 
   return (
     <Layout title="Search" description="This is search page">
-      <div className="mx-auto max-w-screen-2xl px-3 sm:px-10">
+      <div className="mx-auto max-w-screen-2xl px-3 sm:px-6 lg:px-10">
         <div className="flex flex-col py-6 lg:py-8">
-          <div className="w-full mb-6">
-            <CardSlider />
-          </div>
-
           <div className="relative mb-10">
             <CategoryCarousel />
           </div>
 
           <div className="w-full mb-8">
-            <h1 className="text-3xl md:text-4xl font-black text-[#A821A8] mb-2 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-[#A821A8] mb-2 tracking-tight break-words">
               {categoryTitle}
             </h1>
             <div className="h-1 w-20 bg-[#A821A8] rounded-full"></div>

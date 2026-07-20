@@ -496,29 +496,29 @@ const setting = [
         },
         "block1_sub_link4": "#",
         "block2_title": {
-          "en": "Latest News",
-          "de": "Neueste Nachrichten"
+          "en": "Legal & Policies",
+          "de": "Rechtliches"
         },
         "block2_sub_title1": {
-          "en": "Fish & Meat",
-          "de": "Fisch Fleisch"
+          "en": "Privacy Policy",
+          "de": "Datenschutz"
         },
-        "block2_sub_link1": "/search?category=fish-meat",
+        "block2_sub_link1": "/privacy-policy",
         "block2_sub_title2": {
-          "en": "Soft Drink",
-          "de": "Erfrischungsgetränk"
+          "en": "Terms & Conditions",
+          "de": "AGB"
         },
-        "block2_sub_link2": "/search?category=drinks",
+        "block2_sub_link2": "/terms-and-conditions",
         "block2_sub_title3": {
-          "en": "Milk & Dairy",
-          "de": "Milch und Milchprodukte"
+          "en": "Shipping Policy",
+          "de": "Versand"
         },
-        "block2_sub_link3": "/search?category=milk-dairy",
+        "block2_sub_link3": "/shipping-policy",
         "block2_sub_title4": {
-          "en": "Beauty & Health",
-          "de": "Schönheit und Gesundheit"
+          "en": "Return & Refund Policy",
+          "de": "Rückgabe"
         },
-        "block2_sub_link4": "/search?category=beauty-health",
+        "block2_sub_link4": "/return-and-refund-policy",
         "block3_title": {
           "en": "My Account",
           "de": "Mein Konto"

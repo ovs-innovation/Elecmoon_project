@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useCart } from "react-use-cart";
-import { FiHeart, FiEye, FiShoppingBag, FiMessageSquare, FiZap, FiDownload } from "react-icons/fi";
+import { FiHeart, FiEye, FiShoppingBag, FiShoppingCart, FiMessageSquare, FiZap, FiDownload } from "react-icons/fi";
 import { getCategorySearchUrl } from "@utils/categoryUrl";
 import { isInStock } from "@utils/inventory";
 import Stock from "@components/common/Stock";
@@ -172,13 +172,31 @@ const ProductCard = ({
           className="relative w-full flex-shrink-0 cursor-pointer bg-gray-50 overflow-hidden"
         >
           <div className="relative w-full pb-[100%] sm:pb-[75%]">
-            <div className="absolute top-2 left-2 right-2 z-10 flex flex-wrap gap-1 pointer-events-none max-w-full">
-              {showOriginalPrice && (
-                <span className="bg-[#ED1C24] text-white text-[8px] sm:text-[9px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider shrink-0">
-                  Sale
-                </span>
-              )}
-              <BulkDiscountBadge product={product} variant="pill" />
+            <div className="absolute top-2 left-2 right-2 z-10 flex items-start justify-between gap-2 pointer-events-none">
+              <div className="flex flex-wrap gap-1 max-w-[calc(100%-2.75rem)]">
+                {showOriginalPrice && (
+                  <span className="bg-[#ED1C24] text-white text-[8px] sm:text-[9px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider shrink-0">
+                    Sale
+                  </span>
+                )}
+                <BulkDiscountBadge product={product} variant="pill" />
+              </div>
+
+              {!hideAddToCart ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddToCart();
+                  }}
+                  disabled={outOfStock}
+                  className="pointer-events-auto flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 backdrop-blur-sm shadow-md border border-gray-100 flex items-center justify-center text-[#0b1d3d] hover:bg-[#0b1d3d] hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  aria-label="Add to cart"
+                  title="Add to cart"
+                >
+                  <FiShoppingCart className="w-[18px] h-[18px]" />
+                </button>
+              ) : null}
             </div>
 
             {/* Hover Action Buttons */}
@@ -310,33 +328,18 @@ const ProductCard = ({
                 Buy Now
               </button>
             )}
-            <div className="flex gap-2 w-full min-w-0">
-              {!hideAddToCart && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleAddToCart();
-                  }}
-                  disabled={outOfStock}
-                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#0b1d3d] hover:bg-[#162542] text-white py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wide transition-all duration-200 active:scale-95 min-w-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <FiShoppingBag className="w-3.5 h-3.5 shrink-0" />
-                  Add To Cart
-                </button>
-              )}
-              {onEnquire && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEnquire(product);
-                  }}
-                  className={`${hideAddToCart && hideBuyNow ? "w-full" : "flex-1"} flex items-center justify-center gap-1.5 bg-white border-2 border-gray-200 hover:border-[#0b1d3d] text-[#0b1d3d] py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wide transition-all duration-200 active:scale-95 min-w-0`}
-                >
-                  <FiMessageSquare className="w-3.5 h-3.5 shrink-0" />
-                  Enquire
-                </button>
-              )}
-            </div>
+            {onEnquire && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEnquire(product);
+                }}
+                className="flex-1 flex items-center justify-center gap-1.5 bg-white border-2 border-gray-200 hover:border-[#0b1d3d] text-[#0b1d3d] py-2.5 px-2 rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wide transition-all duration-200 active:scale-95 min-w-0"
+              >
+                <FiMessageSquare className="w-3.5 h-3.5 shrink-0" />
+                Enquire Now
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -364,6 +367,18 @@ const ProductCard = ({
                     Quick View
                   </span>
                 </div>
+                {!hideAddToCart ? (
+                  <button
+                    type="button"
+                    onClick={() => handleAddToCart()}
+                    disabled={outOfStock}
+                    className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white shadow-lg border border-gray-100 flex items-center justify-center text-[#0b1d3d] hover:bg-[#0b1d3d] hover:text-white transition-colors disabled:opacity-40"
+                    aria-label="Add to cart"
+                    title="Add to cart"
+                  >
+                    <FiShoppingCart className="w-5 h-5" />
+                  </button>
+                ) : null}
             </div>
 
             {/* Content Side */}
@@ -405,30 +420,33 @@ const ProductCard = ({
                </div>
 
                <div className="mt-auto space-y-3">
-                  {!hideBuyNow && (
-                    <button
-                      onClick={() => {
-                        handleBuyNow();
-                        setIsModalOpen(false);
-                      }}
-                      className="w-full bg-[#ED1C24] hover:bg-red-700 text-white py-4 rounded-2xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 active:scale-[0.98]"
-                    >
-                      <FiZap className="w-4 h-4" />
-                      Buy Now
-                    </button>
-                  )}
-                  {!hideAddToCart && (
-                    <button
-                      onClick={() => {
-                        handleAddToCart();
-                        setIsModalOpen(false);
-                      }}
-                      className="w-full bg-[#0b1d3d] hover:bg-[#162542] text-white py-4 rounded-2xl font-bold text-sm transition-all shadow-lg shadow-[#0b1d3d]/10 flex items-center justify-center gap-2 active:scale-[0.98]"
-                    >
-                      <FiShoppingBag className="w-4 h-4" />
-                      Add To Cart
-                    </button>
-                  )}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {!hideBuyNow && (
+                      <button
+                        onClick={() => {
+                          handleBuyNow();
+                          setIsModalOpen(false);
+                        }}
+                        disabled={outOfStock}
+                        className="flex-1 bg-[#ED1C24] hover:bg-red-700 text-white py-4 rounded-2xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50"
+                      >
+                        <FiZap className="w-4 h-4" />
+                        Buy Now
+                      </button>
+                    )}
+                    {onEnquire && (
+                      <button
+                        onClick={() => {
+                          onEnquire(product);
+                          setIsModalOpen(false);
+                        }}
+                        className="flex-1 bg-white border-2 border-gray-200 hover:border-[#0b1d3d] text-[#0b1d3d] py-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                      >
+                        <FiMessageSquare className="w-4 h-4" />
+                        Enquire Now
+                      </button>
+                    )}
+                  </div>
                   <button
                     onClick={() => {
                       setIsModalOpen(false);

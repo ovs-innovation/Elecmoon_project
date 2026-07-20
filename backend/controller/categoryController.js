@@ -285,9 +285,11 @@ const readyToParentAndChildrenCategory = (categories, parentId = null) => {
   const categoryList = [];
   let Categories;
   if (parentId == null) {
-    Categories = categories.filter((cat) => cat.parentId == undefined);
+    Categories = categories.filter((cat) => !cat.parentId);
   } else {
-    Categories = categories.filter((cat) => cat.parentId == parentId);
+    Categories = categories.filter(
+      (cat) => String(cat.parentId) === String(parentId)
+    );
   }
 
   for (let cate of Categories) {

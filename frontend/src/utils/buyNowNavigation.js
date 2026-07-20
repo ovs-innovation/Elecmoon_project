@@ -1,4 +1,5 @@
 import Cookies from "js-cookie";
+import { appendRedirectUrl } from "@utils/authRedirect";
 
 export const buildBuyNowRoute = (checkoutQuery = {}) => {
   const params = new URLSearchParams();
@@ -18,9 +19,7 @@ export const navigateToBuyNow = (router, { userInfo, checkoutQuery }) => {
   const checkoutPath = buildBuyNowRoute(checkoutQuery);
 
   if (!isUserLoggedIn(userInfo)) {
-    router.push(
-      `/auth/login?redirectUrl=${encodeURIComponent(checkoutPath)}`
-    );
+    router.push(appendRedirectUrl("/auth/login", checkoutPath));
     return;
   }
 

@@ -1,6 +1,4 @@
-import { Input } from "@windmill/react-ui";
-
-import Tree from "rc-tree";
+import { Input, Select } from "@windmill/react-ui";
 import React from "react";
 import Scrollbars from "react-custom-scrollbars-2";
 import { useTranslation } from "react-i18next";
@@ -35,59 +33,46 @@ const CategoryDrawer = ({ id, data }) => {
     setChecked,
     selectCategoryName,
     setSelectCategoryName,
+    isParentCategory,
+    setIsParentCategory,
     handleSelectLanguage,
     isSubmitting,
   } = useCategorySubmit(id, data);
 
   const { showingTranslateValue } = useUtilsFunction();
 
-  const STYLE = `
-  .rc-tree-child-tree {
-    display: hidden;
-  }
-  .node-motion {
-    transition: all .3s;
-    overflow-y: hidden;
-  }
-`;
+  const flattenCategories = (categories = [], depth = 0) =>
+    categories.flatMap((category) => [
+      {
+        _id: category._id,
+        name: showingTranslateValue(category.name),
+        depth,
+      },
+      ...(category.children?.length
+        ? flattenCategories(category.children, depth + 1)
+        : []),
+    ]);
 
-  const motion = {
-    motionName: "node-motion",
-    motionAppear: false,
-    onAppearStart: (node) => {
-      return { height: 0 };
-    },
-    onAppearActive: (node) => ({ height: node.scrollHeight }),
-    onLeaveStart: (node) => ({ height: node.offsetHeight }),
-    onLeaveActive: () => ({ height: 0 }),
-  };
-
-  const renderCategories = (categories) => {
-    let myCategories = [];
-    for (let category of categories) {
-      myCategories.push({
-        title: showingTranslateValue(category.name),
-        key: category._id,
-        children:
-          category.children.length > 0 && renderCategories(category.children),
-      });
+  const findObject = (categories, target) => {
+    for (const category of categories || []) {
+      if (category._id === target) return category;
+      const found = findObject(category.children, target);
+      if (found) return found;
     }
-
-    return myCategories;
+    return undefined;
   };
 
-  const findObject = (obj, target) => {
-    return obj._id === target
-      ? obj
-      : obj?.children?.reduce(
-          (acc, obj) => acc ?? findObject(obj, target),
-          undefined
-        );
-  };
+  const categoryOptions = flattenCategories(data || []);
 
   const handleSelect = async (key) => {
-    // console.log('key', key, 'id', id);
     if (key === undefined) return;
+    if (!key || key === "home") {
+      setChecked("");
+      setSelectCategoryName("Home");
+      setIsParentCategory(true);
+      return;
+    }
+
     if (id) {
       const parentCategoryId = await CategoryServices.getCategoryById(key);
 
@@ -98,18 +83,16 @@ const CategoryDrawer = ({ id, data }) => {
       } else {
         if (key === undefined) return;
         setChecked(key);
-
-        const obj = data[0];
-        const result = findObject(obj, key);
+        setIsParentCategory(false);
+        const result = findObject(data, key);
 
         setSelectCategoryName(showingTranslateValue(result?.name));
       }
     } else {
       if (key === undefined) return;
       setChecked(key);
-
-      const obj = data[0];
-      const result = findObject(obj, key);
+      setIsParentCategory(false);
+      const result = findObject(data, key);
 
       setSelectCategoryName(showingTranslateValue(result?.name));
     }
@@ -150,6 +133,9 @@ const CategoryDrawer = ({ id, data }) => {
                   placeholder={t("ParentCategoryPlaceholder")}
                 />
                 <Error errorName={errors.name} />
+                <p className="mt-2 text-xs text-gray-500">
+                  Yahin jo `Name` likhoge wahi nayi category create hogi.
+                </p>
               </div>
             </div>
 
@@ -168,32 +154,78 @@ const CategoryDrawer = ({ id, data }) => {
             </div>
 
             <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
-              <LabelArea label={t("ParentCategory")} />
-              <div className="col-span-8 sm:col-span-4 relative">
-                <Input
-                  readOnly
-                  {...register(`parent`, {
-                    required: false,
-                  })}
-                  name="parent"
-                  value={selectCategoryName ? selectCategoryName : "Home"}
-                  placeholder={t("ParentCategory")}
-                  type="text"
-                />
-
-                <div className="draggable-demo capitalize">
-                  <style dangerouslySetInnerHTML={{ __html: STYLE }} />
-                  <Tree
-                    expandAction="click"
-                    treeData={renderCategories(data)}
-                    selectedKeys={[checked]}
-                    onSelect={(v) => handleSelect(v[0])}
-                    motion={motion}
-                    animation="slide-up"
+              <LabelArea label="Category Type" />
+              <div className="col-span-8 sm:col-span-4">
+                <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">
+                      Create as Parent Category
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      ON = top-level parent category, OFF = choose existing parent below.
+                    </p>
+                  </div>
+                  <SwitchToggle
+                    handleProcess={(value) => {
+                      setIsParentCategory(value);
+                      if (value) {
+                        setChecked("");
+                        setSelectCategoryName("Home");
+                      }
+                    }}
+                    processOption={isParentCategory}
                   />
+                </div>
+                <div className="mt-3 rounded-lg border border-dashed border-gray-200 bg-blue-50/50 px-4 py-3">
+                  <p className="text-sm font-semibold text-[#0b1d3d]">
+                    {isParentCategory
+                      ? "Ab jo category add karoge wo Parent Category banegi."
+                      : "Ab jo category add karoge wo selected parent ke andar banegi."}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {isParentCategory
+                      ? "Example: `Lithium Ion Battery Cell` type ka top-level category yahin se create hota hai."
+                      : "Neeche dropdown se existing parent choose karo, fir nayi category uske under save hogi."}
+                  </p>
                 </div>
               </div>
             </div>
+
+            {!isParentCategory ? (
+              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
+                <LabelArea label={t("ParentCategory")} />
+                <div className="col-span-8 sm:col-span-4 relative">
+                  <Input
+                    readOnly
+                    {...register(`parent`, {
+                      required: false,
+                    })}
+                    name="parent"
+                    value={selectCategoryName ? selectCategoryName : "Home"}
+                    placeholder={t("ParentCategory")}
+                    type="text"
+                  />
+
+                  <div className="mt-3">
+                    <Select
+                      className="capitalize"
+                      value={checked || "home"}
+                      onChange={(e) => handleSelect(e.target.value)}
+                    >
+                      <option value="home">Select Parent Category</option>
+                      {categoryOptions.map((category) => (
+                        <option key={category._id} value={category._id}>
+                          {`${"— ".repeat(category.depth)}${category.name}`}
+                        </option>
+                      ))}
+                    </Select>
+                    <p className="mt-2 text-xs text-gray-500">
+                      Existing parent category choose karo. Nayi category uske under save hogi.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
               <LabelArea label={t("CategoryIcon")} />

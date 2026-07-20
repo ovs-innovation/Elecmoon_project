@@ -152,9 +152,9 @@ const Dashboard = ({ title, description, children }) => {
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <button
                       onClick={handleLogOut}
-                      className="p-3 flex items-center rounded-lg text-red-600 w-full transition-all duration-200 group"
+                      className="p-3 flex items-center rounded-lg text-[#ED1C24] w-full transition-all duration-200 group hover:bg-[#ED1C24] hover:text-white"
                     >
-                      <IoLockOpenOutline className="h-5 w-5 mr-3 text-red-400 group-hover:text-red-600" />
+                      <IoLockOpenOutline className="h-5 w-5 mr-3 text-[#ED1C24] group-hover:text-white transition-colors" />
                       <span className="text-sm font-semibold">
                         {showingTranslateValue(
                           storeCustomizationSetting?.navbar?.logout

@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import Label from "@components/form/Label";
 
 const InputArea = ({
@@ -12,9 +13,13 @@ const InputArea = ({
   autocomplete,
   placeholder,
   required = true,
-  pattern, // Added pattern as a prop
-  patternMessage = "Invalid input", // Optional: Custom error message for pattern validation
+  pattern,
+  patternMessage = "Invalid input",
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordField = type === "password";
+  const inputType = isPasswordField && showPassword ? "text" : type;
+
   return (
     <>
       <Label label={label} />
@@ -32,11 +37,11 @@ const InputArea = ({
             pattern: pattern
               ? {
                   value: pattern,
-                  message: patternMessage, // Show a custom error message for pattern mismatch
+                  message: patternMessage,
                 }
               : undefined,
           })}
-          type={type}
+          type={inputType}
           name={name}
           readOnly={readOnly}
           defaultValue={defaultValue}
@@ -44,10 +49,24 @@ const InputArea = ({
           autoComplete={autocomplete}
           className={`${
             Icon ? "py-2 pl-10" : "py-2 px-4 md:px-5"
-          } w-full appearance-none border text-sm opacity-75 text-input rounded-md placeholder-body min-h-12 transition duration-200 focus:ring-0 ease-in-out bg-white border-gray-200 focus:outline-none focus:border-[#0b1d3d] h-11 md:h-12 ${
+          } ${isPasswordField ? "pr-11" : ""} w-full appearance-none border text-sm opacity-75 text-input rounded-md placeholder-body min-h-12 transition duration-200 focus:ring-0 ease-in-out bg-white border-gray-200 focus:outline-none focus:border-[#0b1d3d] h-11 md:h-12 ${
             readOnly ? "bg-gray-100 cursor-not-allowed text-gray-500" : ""
           }`}
         />
+        {isPasswordField && !readOnly ? (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-[#0b1d3d] transition-colors"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? (
+              <FiEyeOff className="w-[18px] h-[18px]" />
+            ) : (
+              <FiEye className="w-[18px] h-[18px]" />
+            )}
+          </button>
+        ) : null}
       </div>
     </>
   );

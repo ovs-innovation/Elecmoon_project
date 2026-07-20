@@ -215,9 +215,9 @@ const HomeHeroBanner = () => {
   const multiSlide = slides.length > 1;
 
   return (
-    <section className="relative w-full overflow-hidden font-sans">
+    <section className="relative w-full overflow-x-hidden font-sans">
       <div className="relative w-full">
-        <div className="relative h-[580px] sm:h-[640px] lg:h-[700px] max-w-[1920px] mx-auto">
+        <div className="relative min-h-[620px] sm:min-h-[680px] lg:h-[700px] lg:min-h-0 max-w-[1920px] mx-auto">
           <Swiper
             modules={[Autoplay, EffectFade]}
             effect="fade"
@@ -236,7 +236,7 @@ const HomeHeroBanner = () => {
             }
             onSwiper={onSwiper}
             onSlideChange={onChange}
-            className="hero-enterprise-swiper h-full w-full"
+            className="hero-enterprise-swiper min-h-[620px] sm:min-h-[680px] lg:h-full w-full"
             allowTouchMove
           >
             {slides.map((slide, idx) => {
@@ -258,7 +258,7 @@ const HomeHeroBanner = () => {
                         aria-hidden
                       />
 
-                      <div className="relative z-10 flex flex-col h-full px-7 sm:px-9 lg:px-10 xl:px-12 py-10 lg:py-11">
+                      <div className="relative z-10 flex flex-col h-full px-5 sm:px-9 lg:px-10 xl:px-12 py-7 sm:py-10 lg:py-11">
                         <div className="flex-1 flex flex-col justify-center">
                           <div className="hero-animate-up hero-delay-1 flex items-center gap-2 mb-5 lg:mb-6">
                             <FiZap
@@ -270,12 +270,12 @@ const HomeHeroBanner = () => {
                             </span>
                           </div>
 
-                          <h1 className="hero-animate-up hero-delay-2 font-black uppercase leading-[1.02] tracking-tight mb-5 lg:mb-6">
+                          <h1 className="hero-animate-up hero-delay-2 font-black uppercase leading-[1.02] tracking-tight mb-4 sm:mb-5 lg:mb-6">
                             {headlineLines.map((line, i) =>
                               line ? (
                                 <span
                                   key={i}
-                                  className={`block text-[2rem] sm:text-[2.4rem] lg:text-[2.55rem] xl:text-[2.9rem] ${
+                                  className={`block text-[1.65rem] sm:text-[2.4rem] lg:text-[2.55rem] xl:text-[2.9rem] ${
                                     i === 1 ? "text-[#0088FF]" : "text-white"
                                   }`}
                                 >
@@ -285,7 +285,7 @@ const HomeHeroBanner = () => {
                             )}
                           </h1>
 
-                          <p className="hero-animate-up hero-delay-3 text-white/80 text-sm sm:text-[15px] leading-[1.65] mb-8 max-w-[400px] font-medium">
+                          <p className="hero-animate-up hero-delay-3 text-white/80 text-sm sm:text-[15px] leading-[1.65] mb-5 sm:mb-8 max-w-[400px] font-medium">
                             {slide.body}
                           </p>
 
@@ -305,7 +305,7 @@ const HomeHeroBanner = () => {
                           </div>
                         </div>
 
-                        <ul className="hero-animate-up hero-delay-5 grid grid-cols-4 gap-2 sm:gap-3 pt-7 lg:pt-8 mt-6 lg:mt-auto">
+                        <ul className="hero-animate-up hero-delay-5 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 pt-5 sm:pt-7 lg:pt-8 mt-4 sm:mt-6 lg:mt-auto">
                           {LEFT_FEATURES.map(({ icon: Icon, lines }) => (
                             <li
                               key={lines.join("-")}
@@ -318,7 +318,7 @@ const HomeHeroBanner = () => {
                                   aria-hidden
                                 />
                               </span>
-                              <span className="text-[6.5px] sm:text-[7.5px] font-bold uppercase tracking-[0.06em] text-white/80 leading-snug">
+                              <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-[0.06em] text-white/80 leading-snug">
                                 {lines.map((line) => (
                                   <span key={line} className="block">
                                     {line}
@@ -332,7 +332,7 @@ const HomeHeroBanner = () => {
                     </div>
 
                     {/* Right panel — ~60% */}
-                    <div className="relative order-1 lg:order-2 w-full lg:w-[60%] flex-shrink-0 h-[46%] min-h-[250px] lg:h-full hero-right-panel z-0">
+                    <div className="relative order-1 lg:order-2 w-full lg:w-[60%] flex-shrink-0 h-[38%] min-h-[220px] sm:h-[42%] sm:min-h-[240px] lg:h-full hero-right-panel z-0">
                       <div
                         className="absolute inset-0 hero-circuit-bg pointer-events-none"
                         aria-hidden
@@ -357,7 +357,7 @@ const HomeHeroBanner = () => {
               <button
                 type="button"
                 onClick={() => swiperRef.current?.slidePrev()}
-                className="hero-nav-btn absolute left-3 sm:left-4 lg:left-5 top-1/2 -translate-y-1/2 z-40"
+                className="hero-nav-btn hidden sm:flex absolute left-3 sm:left-4 lg:left-5 top-1/2 -translate-y-1/2 z-40"
                 aria-label="Previous slide"
               >
                 <FiChevronLeft className="w-5 h-5" />
@@ -365,7 +365,7 @@ const HomeHeroBanner = () => {
               <button
                 type="button"
                 onClick={() => swiperRef.current?.slideNext()}
-                className="hero-nav-btn absolute right-3 sm:right-4 lg:right-5 top-1/2 -translate-y-1/2 z-40"
+                className="hero-nav-btn hidden sm:flex absolute right-3 sm:right-4 lg:right-5 top-1/2 -translate-y-1/2 z-40"
                 aria-label="Next slide"
               >
                 <FiChevronRight className="w-5 h-5" />

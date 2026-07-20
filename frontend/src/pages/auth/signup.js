@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { FiLock, FiMail, FiUser } from "react-icons/fi";
 
-//internal import
 import Layout from "@layout/Layout";
 import Error from "@components/form/Error";
 import InputArea from "@components/form/InputArea";
 import useLoginSubmit from "@hooks/useLoginSubmit";
 import BottomNavigation from "@components/login/BottomNavigation";
+import {
+  appendRedirectUrl,
+  isCheckoutRedirect,
+} from "@utils/authRedirect";
 
 const SignUp = () => {
-  const { handleSubmit, submitHandler, register, errors, loading } =
+  const { handleSubmit, submitHandler, register, errors, loading, redirectUrl } =
     useLoginSubmit();
-
-  // console.log("errors", errors);
+  const loginHref = appendRedirectUrl("/auth/login", redirectUrl);
+  const checkoutFlow = isCheckoutRedirect(redirectUrl);
 
   return (
     <Layout title="Signup" description="this is sign up page">
@@ -22,11 +25,16 @@ const SignUp = () => {
             <div className="mx-auto text-left justify-center rounded-md w-full max-w-lg px-4 py-8 sm:p-10 overflow-hidden align-middle transition-all transform bg-white shadow-xl rounded-2x">
               <div className="overflow-hidden mx-auto">
                 <div className="text-center mb-6">
-                  <h2 className="text-3xl font-bold font-serif">Signing Up</h2>
-                  <p className="text-sm text-gray-500 mt-2 mb-8 sm:mb-10">
-                    Create an account by sign up with provider or email,
-                    password
+                  <h2 className="text-3xl font-bold font-serif">Create Account</h2>
+                  <p className="text-sm text-gray-500 mt-2 mb-4">
+                    Register with email and password
                   </p>
+                  {checkoutFlow ? (
+                    <div className="mb-6 rounded-xl border border-[#0b1d3d]/15 bg-[#0b1d3d]/5 px-4 py-3 text-sm text-[#0b1d3d]">
+                      After registering you&apos;ll go straight to{" "}
+                      <strong>checkout</strong> — no extra login step.
+                    </div>
+                  ) : null}
                 </div>
                 <form
                   onSubmit={handleSubmit(submitHandler)}
@@ -81,14 +89,8 @@ const SignUp = () => {
 
                     <div className="flex items-center justify-between">
                       <div className="flex ms-auto">
-                        {/* <Link
-                          href="/auth/phone-signup"
-                          className="text-end text-sm text-heading ps-3 underline hover:no-underline focus:outline-none"
-                        >
-                          Sign Up with Number?
-                        </Link> */}
                         <Link
-                          href="/auth/login"
+                          href={loginHref}
                           className="text-end text-sm text-heading ps-3 underline hover:no-underline focus:outline-none"
                         >
                           Already have account?
@@ -117,16 +119,19 @@ const SignUp = () => {
                         type="submit"
                         className="w-full text-center py-3 rounded bg-red-500 text-white hover:bg-red-600 transition-all focus:outline-none my-1"
                       >
-                        Register
+                        {checkoutFlow
+                          ? "Register & Continue to Checkout"
+                          : "Register"}
                       </button>
                     )}
                   </div>
                 </form>
                 <BottomNavigation
                   desc
-                  route={"/auth/login"}
-                  pageName={"Login"}
+                  route="/auth/login"
+                  pageName="Login"
                   loginTitle="Sign Up"
+                  redirectUrl={redirectUrl}
                 />
               </div>
             </div>

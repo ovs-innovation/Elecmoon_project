@@ -18,7 +18,37 @@ import { UserContext } from "@context/UserContext";
 import { SidebarContext } from "@context/SidebarContext";
 import { WishlistContext } from "@context/WishlistContext";
 import { getCategorySearchUrl } from "@utils/categoryUrl";
+import { isCloudinaryUrl, optimizeImageUrl } from "@utils/cloudinaryImage";
 import NavbarSearch from "@components/navbar/NavbarSearch";
+
+const CategoryNavIcon = ({ src, alt }) => {
+  const [failed, setFailed] = useState(false);
+  const showImage = src && !failed;
+
+  if (!showImage) {
+    return (
+      <span className="w-9 h-9 rounded-lg bg-gray-100 flex-shrink-0 flex items-center justify-center">
+        <FiGrid className="w-4 h-4 text-gray-400" aria-hidden />
+      </span>
+    );
+  }
+
+  const imageSrc = optimizeImageUrl(src, { width: 72 });
+
+  return (
+    <span className="relative w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0">
+      <Image
+        src={imageSrc}
+        alt={alt || "Category"}
+        fill
+        sizes="36px"
+        className="object-contain p-1"
+        unoptimized={isCloudinaryUrl(imageSrc)}
+        onError={() => setFailed(true)}
+      />
+    </span>
+  );
+};
 
 const Navbar = () => {
   const router = useRouter();
@@ -277,22 +307,7 @@ const Navbar = () => {
                           const catName = showingTranslateValue(cat.name);
                           return (
                           <Link key={cat._id} href={getCategorySearchUrl(cat._id, catName, cat.slug)} onClick={closeDropdown} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold text-gray-600 hover:text-[#0b1d3d] hover:bg-gray-50 transition-all group/ci min-w-0">
-                            {cat.icon ? (
-                              <span className="relative w-9 h-9 rounded-lg bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0">
-                                <Image
-                                  src={cat.icon}
-                                  alt=""
-                                  fill
-                                  sizes="36px"
-                                  className="object-contain p-1"
-                                  unoptimized
-                                />
-                              </span>
-                            ) : (
-                              <span className="w-9 h-9 rounded-lg bg-gray-100 flex-shrink-0 flex items-center justify-center">
-                                <FiGrid className="w-4 h-4 text-gray-400" />
-                              </span>
-                            )}
+                            <CategoryNavIcon src={cat.icon} alt={catName} />
                             <span className="flex-1 min-w-0 truncate">{catName}</span>
                             <FiChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover/ci:text-[#ED1C24] flex-shrink-0" />
                           </Link>
@@ -459,10 +474,10 @@ const Navbar = () => {
                                 closeDropdown();
                                 handleLogOut();
                               }}
-                              className="w-full flex items-center gap-3 mx-0.5 px-3 py-2.5 rounded-xl text-[13px] font-bold text-red-600 hover:bg-red-50 active:bg-red-100/80 transition-colors duration-150"
+                              className="w-full flex items-center gap-3 mx-0.5 px-3 py-2.5 rounded-xl text-[13px] font-bold text-[#ED1C24] hover:bg-[#ED1C24] hover:text-white active:opacity-90 transition-colors duration-150 group"
                             >
-                              <span className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center flex-shrink-0">
-                                <FiLogOut className="w-4 h-4 text-red-500" />
+                              <span className="w-8 h-8 rounded-lg bg-[#ED1C24]/10 group-hover:bg-white/20 flex items-center justify-center flex-shrink-0 transition-colors">
+                                <FiLogOut className="w-4 h-4 text-[#ED1C24] group-hover:text-white transition-colors" />
                               </span>
                               Logout
                             </button>
@@ -643,7 +658,7 @@ const Navbar = () => {
                     setMobileMenuOpen(false);
                     handleLogOut();
                   }}
-                  className="w-full py-3 text-[11px] font-bold text-red-500 hover:text-red-600 uppercase tracking-widest transition-colors"
+                  className="w-full py-3 rounded-xl text-[11px] font-bold text-[#ED1C24] hover:bg-[#ED1C24] hover:text-white uppercase tracking-widest transition-colors"
                 >
                   Logout
                 </button>

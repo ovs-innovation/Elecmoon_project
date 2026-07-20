@@ -18,6 +18,7 @@ const useCategorySubmit = (id, data) => {
   const [language, setLanguage] = useState("en");
   const [published, setPublished] = useState(true);
   const [selectCategoryName, setSelectCategoryName] = useState("");
+  const [isParentCategory, setIsParentCategory] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { handlerTextTranslateHandler } = useTranslationValue();
@@ -66,8 +67,12 @@ const useCategorySubmit = (id, data) => {
           ...descriptionTranslates,
           [language]: description ? description : "",
         },
-        parentId: checked ? checked : undefined,
-        parentName: selectCategoryName ? selectCategoryName : "Home",
+        parentId: isParentCategory ? undefined : checked || undefined,
+        parentName: isParentCategory
+          ? "Home"
+          : selectCategoryName
+            ? selectCategoryName
+            : "Home",
 
         icon: imageUrl,
         status: published ? "show" : "hide",
@@ -122,12 +127,10 @@ const useCategorySubmit = (id, data) => {
       clearErrors("parentName");
       clearErrors("description");
       setSelectCategoryName("Home");
+      setIsParentCategory(true);
       setLanguage(lang);
       setValue("language", language);
-
-      if (data !== undefined && data[0]?._id !== undefined) {
-        setChecked(data[0]._id);
-      }
+      setChecked("");
       return;
     }
     if (id) {
@@ -146,8 +149,9 @@ const useCategorySubmit = (id, data) => {
             setValue("language", language);
             setValue("parentId", res.parentId);
             setValue("parentName", res.parentName);
-            setSelectCategoryName(res.parentName);
-            setChecked(res.parentId);
+            setSelectCategoryName(res.parentName || "Home");
+            setChecked(res.parentId || "");
+            setIsParentCategory(!res.parentId);
             setImageUrl(res.icon);
             setPublished(res.status === "show" ? true : false);
           }
@@ -174,6 +178,8 @@ const useCategorySubmit = (id, data) => {
     isSubmitting,
     selectCategoryName,
     setSelectCategoryName,
+    isParentCategory,
+    setIsParentCategory,
     handleSelectLanguage,
   };
 };

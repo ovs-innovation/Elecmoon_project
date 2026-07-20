@@ -1,206 +1,142 @@
-import Image from "next/image";
-import { useRouter } from "next/router";
-import { useContext, useState, useEffect } from "react";
-import {
-  IoChevronDownOutline,
-  IoChevronForwardOutline,
-  IoRemoveSharp,
-} from "react-icons/io5";
+import Link from "next/link";
+import { FiArrowRight, FiPackage } from "react-icons/fi";
+import CategoryImage from "@components/common/CategoryImage";
+import { getCategoryCardImage } from "@utils/categoryDisplayImage";
 
-//internal import
-import { SidebarContext } from "@context/SidebarContext";
-import useUtilsFunction from "@hooks/useUtilsFunction";
-import { getCategorySearchUrl } from "@utils/categoryUrl";
+const CategoryCard = ({
+  category,
+  name,
+  imageSrc,
+  isActive = false,
+  href,
+  onClick,
+  onMouseEnter,
+  className = "",
+  showExplore = true,
+  fromProduct = false,
+  compact = false,
+}) => {
+  const displayImage =
+    imageSrc || getCategoryCardImage(category, {}) || category?.icon;
 
-const CategoryCard = ({ title, icon, nested, id, slug }) => {
-  const router = useRouter();
-  const { closeCategoryDrawer } = useContext(SidebarContext);
-  const { showingTranslateValue } = useUtilsFunction();
+  const cardClass = [
+    "group relative flex flex-col h-full overflow-hidden cursor-pointer",
+    "bg-white rounded-2xl border transition-all duration-300 ease-out",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b1d3d]/30 focus-visible:ring-offset-2",
+    compact ? "min-h-[210px] sm:min-h-[230px]" : "min-h-[248px] sm:min-h-[272px] md:min-h-[288px]",
+    isActive
+      ? "border-[#0b1d3d] shadow-[0_14px_44px_rgba(11,29,61,0.16)] ring-2 ring-[#0b1d3d]/12"
+      : "border-gray-100/90 shadow-[0_4px_18px_rgba(11,29,61,0.07)] hover:border-[#ED1C24]/35 hover:shadow-[0_22px_56px_rgba(11,29,61,0.14)] sm:hover:-translate-y-1.5",
+    className,
+  ].join(" ");
 
-  // react hook
-  const [show, setShow] = useState(false);
-  const [showSubCategory, setShowSubCategory] = useState({
-    id: "",
-    show: false,
-  });
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Check if device is mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  const navigateToCategory = (catId, categoryName, slug) => {
-    const url = getCategorySearchUrl(catId, categoryName, slug);
-    router.prefetch(url);
-    router.push(url);
-    closeCategoryDrawer();
-  };
-
-  // handle show category - toggle subcategories, only navigate if no children
-  const showCategory = (id, categoryName, slug) => {
-    if (nested?.length > 0) {
-      setShow(!show);
-    } else {
-      navigateToCategory(id, categoryName, slug);
-    }
-  };
-
-  // handle sub nested category - show sub-subcategories without navigation
-  const handleSubNestedCategory = (id, categoryName) => {
-    setShowSubCategory({ id: id, show: showSubCategory.show ? false : true });
-  };
-
-  // handle sub category - navigate to subcategory page
-  const handleSubCategory = (id, categoryName, slug) => {
-    navigateToCategory(id, categoryName, slug);
-  };
-
-  const handleSubSubCategory = (id, categoryName, slug) => {
-    navigateToCategory(id, categoryName, slug);
-    if (isMobile) {
-      closeCategoryDrawer();
-    }
-  };
-
-  return (
+  const inner = (
     <>
-      <div className="relative group">
-        <a
-          onClick={() => showCategory(id, title, slug)}
-          onMouseEnter={() => {
-            if (nested?.length > 0) return;
-            router.prefetch(getCategorySearchUrl(id, title, slug));
-          }}
-          className="p-3 flex items-center rounded-md hover:bg-gray-50 w-full hover:text-[#A821A8] transition-colors duration-200 cursor-pointer"
-          role="button"
-        >
-          {icon ? (
-            <Image
-              src={icon}
-              width={20}
-              height={20}
-              alt="Category"
-              className="flex-shrink-0"
-            />
-          ) : (
-            <Image
-              src="https://res.cloudinary.com/ahossain/image/upload/v1655097002/placeholder_kvepfp.png"
-              width={20}
-              height={20}
-              alt="category"
-              className="flex-shrink-0"
-            />
-          )}
+      <div
+        className={`absolute top-0 inset-x-0 h-[3px] z-20 transition-all duration-300 ${
+          isActive ? "bg-[#ED1C24]" : "bg-transparent group-hover:bg-[#ED1C24]"
+        }`}
+        aria-hidden
+      />
 
-          <div className="inline-flex items-center justify-between ml-3 text-sm font-medium w-full hover:text-[#A821A8]">
-            <span className="truncate">{title}</span>
-            {nested?.length > 0 && (
-              <span className="transition duration-300 ease-in-out inline-flex loading-none items-end text-gray-400 ml-2 flex-shrink-0">
-                {show ? <IoChevronDownOutline /> : <IoChevronForwardOutline />}
-              </span>
-            )}
-          </div>
-        </a>
+      <div className="relative flex-[3] min-h-[148px] sm:min-h-[168px] md:min-h-[178px] p-3 sm:p-3.5 pb-1.5">
+        <div
+          className="absolute inset-3 sm:inset-3.5 rounded-xl bg-gradient-to-b from-[#f8fafc] via-white to-[#eef2f7]"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-3 sm:inset-3.5 rounded-xl opacity-60 bg-[radial-gradient(ellipse_at_50%_0%,rgba(237,28,36,0.07),transparent_65%)]"
+          aria-hidden
+        />
 
-        {/* Click-based expanded view with improved styling */}
-        {show && nested.length > 0 && (
-          <div className="border-l-2 border-gray-100 ml-4 mt-1">
-            <ul className="space-y-1">
-              {nested.map((children) => (
-                <li key={children._id} className="relative">
-                  {children.children.length > 0 ? (
-                    <a
-                      onClick={() =>
-                        handleSubNestedCategory(
-                          children._id,
-                          showingTranslateValue(children.name)
-                        )
-                      }
-                      className="flex items-center px-3 py-2 text-sm text-gray-700 hover:text-[#A821A8] hover:bg-gray-50 cursor-pointer transition-colors duration-200 rounded-md"
-                    >
-                      <span className="text-xs text-gray-400 mr-2">
-                        <IoRemoveSharp />
-                      </span>
+        {fromProduct ? (
+          <span className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-[#0b1d3d] text-white text-[8px] sm:text-[9px] font-bold uppercase tracking-wide shadow-sm max-w-[calc(100%-3rem)]">
+            <FiPackage className="w-2.5 h-2.5 shrink-0" aria-hidden />
+            <span className="truncate">{compact ? "Live" : "Live product"}</span>
+          </span>
+        ) : null}
 
-                      <div className="inline-flex items-center justify-between w-full">
-                        <span className="truncate">
-                          {`for ${showingTranslateValue(children.name)}`}
-                        </span>
-                        <span className="transition duration-300 ease-in-out inline-flex loading-none items-end text-gray-400 ml-2 flex-shrink-0">
-                          {showSubCategory.id === children._id &&
-                          showSubCategory.show ? (
-                            <IoChevronDownOutline />
-                          ) : (
-                            <IoChevronForwardOutline />
-                          )}
-                        </span>
-                      </div>
-                    </a>
-                  ) : (
-                    <a
-                      onClick={() =>
-                        handleSubCategory(
-                          children._id,
-                          showingTranslateValue(children.name),
-                          children.slug
-                        )
-                      }
-                      className="flex items-center px-3 py-2 text-sm text-gray-700 hover:text-[#A821A8] hover:bg-gray-50 cursor-pointer transition-colors duration-200 rounded-md"
-                    >
-                      <span className="text-xs text-gray-400 mr-2">
-                        <IoRemoveSharp />
-                      </span>
-                      <span className="truncate">
-                        {`for ${showingTranslateValue(children.name)}`}
-                      </span>
-                    </a>
-                  )}
+        <CategoryImage
+          src={displayImage}
+          alt={name || "Category"}
+          className="relative z-10 w-full h-full rounded-xl border border-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+          aspectClass={`aspect-[5/4] w-full h-full ${compact ? "min-h-[120px] sm:min-h-[152px]" : "min-h-[132px] sm:min-h-[152px]"}`}
+          imageClassName="object-contain p-2 sm:p-3 transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+          sizes="(max-width: 640px) 46vw, (max-width: 1024px) 30vw, 240px"
+          optimizeWidth={520}
+        />
+      </div>
 
-                  {/* sub children category with improved styling */}
-                  {showSubCategory.id === children._id &&
-                  showSubCategory.show === true &&
-                  children.children.length > 0 ? (
-                    <div className="border-l-2 border-gray-100 ml-4 mt-1">
-                      <ul className="space-y-1">
-                        {children.children.map((subChildren) => (
-                          <li key={subChildren._id}>
-                            <a
-                              onClick={() =>
-                                handleSubSubCategory(
-                                  subChildren._id,
-                                  showingTranslateValue(subChildren?.name),
-                                  subChildren.slug
-                                )
-                              }
-                              className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-[#A821A8] hover:bg-gray-50 cursor-pointer transition-colors duration-200 rounded-md"
-                            >
-                              <span className="text-xs text-gray-400 mr-2">
-                                <IoRemoveSharp />
-                              </span>
-                              <span className="truncate">
-                                {`for ${showingTranslateValue(subChildren?.name)}`}
-                              </span>
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+      <div
+        className={`relative z-10 flex flex-[1] items-center justify-between gap-2.5 px-3.5 sm:px-4 py-3 sm:py-3.5 border-t ${
+          isActive
+            ? "bg-gradient-to-r from-[#0b1d3d]/[0.04] to-transparent border-[#0b1d3d]/10"
+            : "bg-white border-gray-100/80"
+        }`}
+      >
+        <div className="flex-1 min-w-0">
+          <h3
+            className={`text-xs sm:text-sm font-bold leading-snug line-clamp-2 transition-colors duration-200 ${
+              isActive ? "text-[#0b1d3d]" : "text-gray-800 group-hover:text-[#0b1d3d]"
+            }`}
+          >
+            {name}
+          </h3>
+          {showExplore ? (
+            <p
+              className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wider transition-colors duration-200 ${
+                compact ? "hidden sm:block" : ""
+              } ${
+                isActive
+                  ? "text-[#ED1C24]"
+                  : "text-gray-400 group-hover:text-[#ED1C24]/80"
+              }`}
+            >
+              Explore
+            </p>
+          ) : null}
+        </div>
+
+        {showExplore ? (
+          <span
+            className={`flex-shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
+              isActive
+                ? "bg-[#ED1C24] text-white shadow-md shadow-[#ED1C24]/25"
+                : "bg-gray-100 text-gray-500 group-hover:bg-[#0b1d3d] group-hover:text-white group-hover:shadow-md"
+            }`}
+            aria-hidden
+          >
+            <FiArrowRight className="w-4 h-4" />
+          </span>
+        ) : null}
       </div>
     </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={cardClass} onMouseEnter={onMouseEnter}>
+        {inner}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className={cardClass}
+      onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick?.();
+        }
+      }}
+    >
+      {inner}
+    </div>
   );
 };
 
