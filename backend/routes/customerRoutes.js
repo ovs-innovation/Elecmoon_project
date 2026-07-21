@@ -2,6 +2,10 @@ const express = require("express");
 const router = express.Router();
 const {
   loginCustomer,
+  sendLoginOtp,
+  verifyLoginOtp,
+  sendSignupOtp,
+  verifySignupOtp,
   registerCustomer,
   verifyPhoneNumber,
   signUpWithProvider,
@@ -28,6 +32,7 @@ const {
   passwordVerificationLimit,
   emailVerificationLimit,
   phoneVerificationLimit,
+  loginOtpLimit,
 } = require("../lib/email-sender/sender");
 const {
   adminOnly,
@@ -41,6 +46,10 @@ router.post("/verify-email", emailVerificationLimit, verifyEmailAddress);
 router.post("/verify-phone", phoneVerificationLimit, verifyPhoneNumber);
 router.post("/register/:token", registerCustomer);
 router.post("/login", loginCustomer);
+router.post("/login/otp/send", loginOtpLimit, sendLoginOtp);
+router.post("/login/otp/verify", loginOtpLimit, verifyLoginOtp);
+router.post("/signup/otp/send", loginOtpLimit, sendSignupOtp);
+router.post("/signup/otp/verify", loginOtpLimit, verifySignupOtp);
 router.post("/signup/oauth", signUpWithOauthProvider);
 router.post("/signup/:token", signUpWithProvider);
 router.put("/forget-password", passwordVerificationLimit, forgetPassword);

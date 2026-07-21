@@ -2,18 +2,79 @@ require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Customer = require("../models/Customer");
+const LoginOtp = require("../models/LoginOtp");
+const SignupOtp = require("../models/SignupOtp");
 const { signInToken, tokenForVerify } = require("../config/auth");
-const { sendEmail } = require("../lib/email-sender/sender");
+const { sendEmail, sendMailPromise } = require("../lib/email-sender/sender");
 const {
   customerRegisterBody,
 } = require("../lib/email-sender/templates/register");
 const {
   forgetPasswordEmailBody,
 } = require("../lib/email-sender/templates/forget-password");
+const { loginOtpEmailBody } = require("../lib/email-sender/templates/login-otp");
 const { sendVerificationCode } = require("../lib/phone-verification/sender");
 const {
   queueCustomerSignupNotificationEmail,
 } = require("../lib/email-sender/adminNotificationEmail");
+
+const OTP_EXPIRY_MINUTES = 10;
+const MAX_OTP_ATTEMPTS = 5;
+
+const buildCustomerLoginResponse = (customer, token) => ({
+  token,
+  _id: customer._id,
+  name: customer.name,
+  email: customer.email,
+  address: customer.address,
+  phone: customer.phone,
+  image: customer.image,
+  cart: customer.cart || [],
+  wishlist: customer.wishlist || [],
+});
+
+const verifyStoredOtp = async ({ OtpModel, email, otp }) => {
+  const otpRecord = await OtpModel.findOne({ email });
+  if (!otpRecord) {
+    return {
+      ok: false,
+      status: 401,
+      message: "OTP expired or not requested. Please request a new OTP.",
+    };
+  }
+
+  if (otpRecord.expiresAt < new Date()) {
+    await OtpModel.deleteOne({ email });
+    return {
+      ok: false,
+      status: 401,
+      message: "OTP has expired. Please request a new one.",
+    };
+  }
+
+  if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
+    await OtpModel.deleteOne({ email });
+    return {
+      ok: false,
+      status: 429,
+      message: "Too many invalid attempts. Please request a new OTP.",
+    };
+  }
+
+  const isValidOtp = bcrypt.compareSync(otp, otpRecord.otpHash);
+  if (!isValidOtp) {
+    otpRecord.attempts += 1;
+    await otpRecord.save();
+    return {
+      ok: false,
+      status: 401,
+      message: "Invalid OTP. Please try again.",
+    };
+  }
+
+  await OtpModel.deleteOne({ email });
+  return { ok: true, record: otpRecord };
+};
 
 const verifyEmailAddress = async (req, res) => {
   try {
@@ -188,17 +249,7 @@ const loginCustomer = async (req, res) => {
       bcrypt.compareSync(req.body.password, customer.password)
     ) {
       const token = signInToken(customer);
-      res.send({
-        token,
-        _id: customer._id,
-        name: customer.name,
-        email: customer.email,
-        address: customer.address,
-        phone: customer.phone,
-        image: customer.image,
-        cart: customer.cart || [],
-        wishlist: customer.wishlist || [],
-      });
+      res.send(buildCustomerLoginResponse(customer, token));
     } else {
       res.status(401).send({
         message: "Invalid user or password!",
@@ -209,6 +260,181 @@ const loginCustomer = async (req, res) => {
     res.status(500).send({
       message: err.message,
       error: "Invalid user or password!",
+    });
+  }
+};
+
+const sendLoginOtp = async (req, res) => {
+  try {
+    const email = String(req.body.email || "").trim().toLowerCase();
+
+    if (!email) {
+      return res.status(400).send({
+        message: "Email is required.",
+      });
+    }
+
+    const customer = await Customer.findOne({ email });
+    if (!customer) {
+      return res.status(404).send({
+        message: "No account found with this email. Please sign up first.",
+      });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otpHash = bcrypt.hashSync(otp, 10);
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await LoginOtp.findOneAndUpdate(
+      { email },
+      { otpHash, expiresAt, attempts: 0 },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    await sendMailPromise({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: `${otp} is your Elecmoon login code`,
+      html: loginOtpEmailBody({ name: customer.name, otp }),
+    });
+
+    res.send({
+      message: "OTP sent to your email inbox. It is valid for 10 minutes.",
+    });
+  } catch (err) {
+    console.error("sendLoginOtp error:", err);
+    res.status(500).send({
+      message: "Could not send OTP. Please try again later.",
+    });
+  }
+};
+
+const verifyLoginOtp = async (req, res) => {
+  try {
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const otp = String(req.body.otp || "").trim();
+
+    if (!email || !otp) {
+      return res.status(400).send({
+        message: "Email and OTP are required.",
+      });
+    }
+
+    const customer = await Customer.findOne({ email });
+    if (!customer) {
+      return res.status(404).send({
+        message: "No account found with this email.",
+      });
+    }
+
+    const otpCheck = await verifyStoredOtp({
+      OtpModel: LoginOtp,
+      email,
+      otp,
+    });
+    if (!otpCheck.ok) {
+      return res.status(otpCheck.status).send({ message: otpCheck.message });
+    }
+
+    const token = signInToken(customer);
+    res.send(buildCustomerLoginResponse(customer, token));
+  } catch (err) {
+    console.error("verifyLoginOtp error:", err);
+    res.status(500).send({
+      message: err.message,
+    });
+  }
+};
+
+const sendSignupOtp = async (req, res) => {
+  try {
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+
+    if (!name || !email) {
+      return res.status(400).send({
+        message: "Name and email are required.",
+      });
+    }
+
+    const existingCustomer = await Customer.findOne({ email });
+    if (existingCustomer) {
+      return res.status(403).send({
+        message: "This email is already registered. Please login instead.",
+      });
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otpHash = bcrypt.hashSync(otp, 10);
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
+
+    await SignupOtp.findOneAndUpdate(
+      { email },
+      { name, otpHash, expiresAt, attempts: 0 },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    await sendMailPromise({
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: `${otp} is your Elecmoon signup code`,
+      html: loginOtpEmailBody({ name, otp, purpose: "signup" }),
+    });
+
+    res.send({
+      message: "OTP sent to your email inbox. It is valid for 10 minutes.",
+    });
+  } catch (err) {
+    console.error("sendSignupOtp error:", err);
+    res.status(500).send({
+      message: "Could not send OTP. Please try again later.",
+    });
+  }
+};
+
+const verifySignupOtp = async (req, res) => {
+  try {
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const otp = String(req.body.otp || "").trim();
+
+    if (!name || !email || !otp) {
+      return res.status(400).send({
+        message: "Name, email and OTP are required.",
+      });
+    }
+
+    const existingCustomer = await Customer.findOne({ email });
+    if (existingCustomer) {
+      return res.status(403).send({
+        message: "This email is already registered. Please login instead.",
+      });
+    }
+
+    const otpCheck = await verifyStoredOtp({
+      OtpModel: SignupOtp,
+      email,
+      otp,
+    });
+    if (!otpCheck.ok) {
+      return res.status(otpCheck.status).send({ message: otpCheck.message });
+    }
+
+    const signupName = otpCheck.record?.name || name;
+    const newUser = new Customer({
+      name: signupName,
+      email,
+    });
+
+    await newUser.save();
+    queueCustomerSignupNotificationEmail(newUser, "OTP signup");
+
+    const token = signInToken(newUser);
+    res.send(buildCustomerLoginResponse(newUser, token));
+  } catch (err) {
+    console.error("verifySignupOtp error:", err);
+    res.status(500).send({
+      message: err.message,
     });
   }
 };
@@ -645,6 +871,10 @@ const getWishlist = async (req, res) => {
 
 module.exports = {
   loginCustomer,
+  sendLoginOtp,
+  verifyLoginOtp,
+  sendSignupOtp,
+  verifySignupOtp,
   verifyPhoneNumber,
   registerCustomer,
   addAllCustomers,

@@ -52,9 +52,29 @@ export const getDynamicAuthOptions = async () => {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        otp: { label: "OTP", type: "text" },
+        loginType: { label: "Login Type", type: "text" },
+        name: { label: "Name", type: "text" },
       },
       authorize: async (credentials) => {
         try {
+          if (credentials?.loginType === "signup-otp" && credentials?.otp) {
+            const userInfo = await CustomerServices.verifySignupOtp({
+              name: credentials.name,
+              email: credentials.email,
+              otp: credentials.otp,
+            });
+            return userInfo;
+          }
+
+          if (credentials?.loginType === "otp" && credentials?.otp) {
+            const userInfo = await CustomerServices.verifyLoginOtp({
+              email: credentials.email,
+              otp: credentials.otp,
+            });
+            return userInfo;
+          }
+
           const userInfo = await CustomerServices.loginCustomer(credentials);
           return userInfo;
         } catch (error) {

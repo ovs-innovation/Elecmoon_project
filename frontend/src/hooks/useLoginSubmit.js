@@ -27,6 +27,7 @@ const useLoginSubmit = () => {
       redirect: false,
       email,
       password,
+      loginType: "password",
     });
 
     if (result?.error) {
@@ -40,6 +41,100 @@ const useLoginSubmit = () => {
     }
 
     return false;
+  };
+
+  const completeOtpLogin = async (email, otp) => {
+    const result = await signIn("credentials", {
+      redirect: false,
+      email,
+      otp,
+      loginType: "otp",
+    });
+
+    if (result?.error) {
+      notifyError(result?.error);
+      return false;
+    }
+
+    if (result?.ok) {
+      router.push(getSafeRedirectUrl(redirectUrl));
+      return true;
+    }
+
+    return false;
+  };
+
+  const sendSignupOtpHandler = async ({ name, email }) => {
+    setLoading(true);
+    try {
+      const res = await CustomerServices.sendSignupOtp({ name, email });
+      notifySuccess(res.message);
+      return true;
+    } catch (error) {
+      notifyError(error?.response?.data?.message || error?.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completeSignupOtp = async (name, email, otp) => {
+    const result = await signIn("credentials", {
+      redirect: false,
+      name,
+      email,
+      otp,
+      loginType: "signup-otp",
+    });
+
+    if (result?.error) {
+      notifyError(result?.error);
+      return false;
+    }
+
+    if (result?.ok) {
+      notifySuccess("Account created successfully!");
+      router.push(getSafeRedirectUrl(redirectUrl));
+      return true;
+    }
+
+    return false;
+  };
+
+  const otpSignupSubmitHandler = async ({ name, email, otp }) => {
+    setLoading(true);
+    try {
+      await completeSignupOtp(name, email, otp);
+    } catch (error) {
+      notifyError(error?.response?.data?.message || error?.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendOtpHandler = async (email) => {
+    setLoading(true);
+    try {
+      const res = await CustomerServices.sendLoginOtp({ email });
+      notifySuccess(res.message);
+      return true;
+    } catch (error) {
+      notifyError(error?.response?.data?.message || error?.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const otpSubmitHandler = async ({ email, otp }) => {
+    setLoading(true);
+    try {
+      await completeOtpLogin(email, otp);
+    } catch (error) {
+      notifyError(error?.response?.data?.message || error?.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const submitHandler = async ({ name, email, password, phone }) => {
@@ -105,6 +200,10 @@ const useLoginSubmit = () => {
     control,
     handleSubmit,
     submitHandler,
+    sendOtpHandler,
+    otpSubmitHandler,
+    sendSignupOtpHandler,
+    otpSignupSubmitHandler,
     redirectUrl,
   };
 };

@@ -5,6 +5,22 @@ const CustomerServices = {
     return requests.post("/customer/login", body);
   },
 
+  sendLoginOtp: async (body) => {
+    return requests.post("/customer/login/otp/send", body);
+  },
+
+  verifyLoginOtp: async (body) => {
+    return requests.post("/customer/login/otp/verify", body);
+  },
+
+  sendSignupOtp: async (body) => {
+    return requests.post("/customer/signup/otp/send", body);
+  },
+
+  verifySignupOtp: async (body) => {
+    return requests.post("/customer/signup/otp/verify", body);
+  },
+
   verifyEmailAddress: async (body) => {
     return requests.post("/customer/verify-email", body);
   },

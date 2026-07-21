@@ -102,6 +102,17 @@ const phoneVerificationLimit = rateLimit({
   },
 });
 
+const loginOtpLimit = rateLimit({
+  windowMs: minutes * 60 * 1000,
+  max: 5,
+  handler: (req, res) => {
+    res.status(429).send({
+      success: false,
+      message: `Too many OTP requests. Please try again after ${minutes} minutes.`,
+    });
+  },
+});
+
 module.exports = {
   sendEmail,
   sendMailPromise,
@@ -109,4 +120,5 @@ module.exports = {
   passwordVerificationLimit,
   supportMessageLimit,
   phoneVerificationLimit,
+  loginOtpLimit,
 };
