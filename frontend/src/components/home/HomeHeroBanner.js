@@ -17,7 +17,7 @@ import {
 } from "react-icons/fi";
 import useGetSetting from "@hooks/useGetSetting";
 import useUtilsFunction from "@hooks/useUtilsFunction";
-import { resolveBannerHref, isExternalHref } from "@utils/bannerLink";
+import { isExternalHref, resolveShopNowHref } from "@utils/bannerLink";
 import { isCloudinaryUrl, optimizeImageUrl } from "@utils/cloudinaryImage";
 import "swiper/css";
 import "swiper/css/effect-fade";
@@ -47,12 +47,14 @@ const BOTTOM_TRUST = [
   { icon: FiHeadphones, title: "Technical Support", sub: "Expert Guidance" },
 ];
 
+const DEFAULT_SHOP_HREF = "/#categories";
+
 const HARDCODED_SLIDES = [1, 2, 3, 4].map((id) => ({
   id,
   image: HERO_DEFAULT_IMAGE,
   title: DEFAULT_HEADLINE,
   body: DEFAULT_BODY,
-  href: "",
+  href: DEFAULT_SHOP_HREF,
   cta: "Shop Now",
 }));
 
@@ -153,6 +155,7 @@ const HeroImagePanel = ({ slide, priority }) => (
 );
 
 const ShopNowButton = ({ href, external, label }) => {
+  const targetHref = href || DEFAULT_SHOP_HREF;
   const content = (
     <span className="inline-flex items-center justify-center gap-2 px-7 py-3 rounded-lg font-bold uppercase tracking-wide text-[12px] sm:text-[13px] text-white bg-[#ED1C24] hover:bg-[#d41820] shadow-[0_4px_14px_rgba(237,28,36,0.35)] transition-colors duration-200">
       {label || "Shop Now"}
@@ -160,15 +163,34 @@ const ShopNowButton = ({ href, external, label }) => {
     </span>
   );
 
-  if (!href) return content;
-  if (external) {
+  const scrollToCategoriesIfNeeded = (e) => {
+    const isCategoriesHash =
+      targetHref === "/#categories" || targetHref === "#categories";
+    if (!isCategoriesHash || typeof window === "undefined") return;
+
+    const onHome =
+      window.location.pathname === "/" || window.location.pathname === "";
+    if (!onHome) return;
+
+    e.preventDefault();
+    document
+      .getElementById("categories")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  if (external && href) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer">
         {content}
       </a>
     );
   }
-  return <Link href={href}>{content}</Link>;
+
+  return (
+    <Link href={targetHref} onClick={scrollToCategoriesIfNeeded}>
+      {content}
+    </Link>
+  );
 };
 
 const HomeHeroBanner = () => {
@@ -191,12 +213,18 @@ const HomeHeroBanner = () => {
 
       if (!title && !image && !body) return null;
 
+      const rawLink = showingUrl(sd[`${key}_link`]);
+      const adminLink = resolveShopNowHref(
+        typeof rawLink === "string" ? rawLink.trim() : "",
+        null
+      );
+
       return {
         id: index + 1,
         image: image || HERO_DEFAULT_IMAGE,
         title: title || DEFAULT_HEADLINE,
         body: body || DEFAULT_BODY,
-        href: showingUrl(sd[`${key}_link`]),
+        href: adminLink || DEFAULT_SHOP_HREF,
         cta: showingTranslateValue(sd[`${key}_button`]) || "Shop Now",
       };
     }).filter(Boolean);
@@ -240,7 +268,7 @@ const HomeHeroBanner = () => {
             allowTouchMove
           >
             {slides.map((slide, idx) => {
-              const shopHref = resolveBannerHref(slide.href);
+              const shopHref = resolveShopNowHref(slide.href, DEFAULT_SHOP_HREF);
               const shopExternal = shopHref && isExternalHref(shopHref);
               const headlineLines = parseHeadlineLines(slide.title);
 

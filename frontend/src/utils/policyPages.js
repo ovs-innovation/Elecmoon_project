@@ -82,4 +82,5 @@ export const getReturnRefundPolicySections = (t) => [
   { paragraphs: [t("return-s4-p1")] },
   { paragraphs: [t("return-s5-p1")] },
   { paragraphs: [t("return-s6-p1")] },
+  { paragraphs: [t("return-s7-p1")] },
 ];

@@ -300,7 +300,7 @@
   "terms-s6-p1": "Your use of the Platform is also subject to our ",
   "terms-s6-link": "Privacy Policy",
   "terms-s7-title": "Governing Law",
-  "terms-s7-p1": "These Terms are governed by the laws of Australia. Any disputes shall be subject to the exclusive jurisdiction of the courts in Victoria, Australia.",
+  "terms-s7-p1": "These Terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of the courts in New Delhi, Delhi, India.",
   "shipping-s1-p1": "This Shipping Policy explains how Elecmoon processes, dispatches, and delivers orders placed through our Platform within Australia.",
   "shipping-s2-title": "Order Processing",
   "shipping-s2-p1": "Orders are typically processed within 1–2 business days after payment confirmation. Processing may take longer during peak periods, public holidays, or for bulk or custom orders. You will receive email confirmation when your order is placed and when it is shipped.",
@@ -326,5 +326,6 @@
   "return-s5-title": "Non-Returnable Items",
   "return-s5-p1": "Returns may not be accepted for used, installed, customised, or clearance items unless the product is faulty or was incorrectly supplied.",
   "return-s6-title": "Faulty or Wrong Products",
-  "return-s6-p1": "If you receive a defective or incorrect item, contact us within 48 hours of delivery with photos and your order number. We will arrange a replacement, repair, or refund as appropriate."
+  "return-s6-p1": "If you receive a defective or incorrect item, contact us within 48 hours of delivery with photos and your order number. We will arrange a replacement, repair, or refund as appropriate.",
+  "return-s7-p1": "Exchange/Replacement deliveries will be done within 5-7 business days."
 }

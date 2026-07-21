@@ -11,6 +11,7 @@ import "swiper/css/navigation";
 
 import useGetSetting from "@hooks/useGetSetting";
 import useUtilsFunction from "@hooks/useUtilsFunction";
+import { resolveShopNowHref } from "@utils/bannerLink";
 
 const MainCarousel = () => {
   const { storeCustomizationSetting, loading, isFetched } = useGetSetting();
@@ -224,7 +225,7 @@ const MainCarousel = () => {
                     {item.info}
                   </p>
                   <Link
-                    href={item.url}
+                    href={resolveShopNowHref(item.url)}
                     className="inline-block text-xs sm:text-sm md:text-base lg:text-lg font-serif font-medium px-3 py-1 sm:px-4 sm:py-2 md:px-5 md:py-2 lg:px-6 lg:py-3 xl:px-8 xl:py-3 bg-[#EF4036] text-center rounded-md text-white hover:bg-[#C53030] transition-all duration-300 transform hover:scale-105"
                   >
                     {item.buttonName}

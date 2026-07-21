@@ -15,7 +15,7 @@ const HomeCategoriesSection = () => {
 
   if (isCategoriesLoading) {
     return (
-      <section className="bg-gray-50 py-10 lg:py-14">
+      <section id="categories" className="bg-gray-50 py-10 lg:py-14 scroll-mt-28">
         <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-10">
           <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-8" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 lg:gap-5">
@@ -42,7 +42,10 @@ const HomeCategoriesSection = () => {
   if (!categories?.length) return null;
 
   return (
-    <section className="bg-gray-50 py-10 lg:py-14 border-y border-gray-100">
+    <section
+      id="categories"
+      className="bg-gray-50 py-10 lg:py-14 border-y border-gray-100 scroll-mt-28"
+    >
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-10">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
           <div>

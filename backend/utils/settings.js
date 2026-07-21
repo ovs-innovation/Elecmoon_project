@@ -210,7 +210,7 @@ const setting = [
           "en": "Shop Now",
           "de": "Jetzt einkaufen"
         },
-        "first_link": "/search?category=milk-dairy",
+        "first_link": "/#categories",
         "second_img": "https://res.cloudinary.com/ahossain/image/upload/v1697688491/settings/slider-2_o6aezc.jpg",
         "second_title": {
           "en": "Best Different Type of Grocery Store",
@@ -224,7 +224,7 @@ const setting = [
           "en": "Shop Now",
           "de": "Jetzt einkaufen"
         },
-        "second_link": "/search?category=fish-meat",
+        "second_link": "/#categories",
         "third_img": "https://res.cloudinary.com/ahossain/image/upload/v1697688492/settings/slider-3_iw4nnf.jpg",
         "third_title": {
           "en": "Quality Freshness Guaranteed!",
@@ -238,7 +238,7 @@ const setting = [
           "en": "Shop Now",
           "de": "Jetzt einkaufen"
         },
-        "third_link": "/search?category=fruits-vegetable",
+        "third_link": "/#categories",
         "four_img": "https://i.postimg.cc/rscqZJNz/slider-1.webp",
         "four_title": {
           "en": "The Best Quality Products Guaranteed!",
@@ -252,7 +252,7 @@ const setting = [
           "en": "Shop Now",
           "de": "Jetzt einkaufen"
         },
-        "four_link": "/search?category=fruits-vegetable",
+        "four_link": "/#categories",
         "five_img": "https://res.cloudinary.com/ahossain/image/upload/v1697688491/settings/slider-2_o6aezc.jpg",
         "five_title": {
           "en": "Best Different Type of Grocery Store",
@@ -266,7 +266,7 @@ const setting = [
           "en": "Shop Now",
           "de": "Jetzt einkaufen"
         },
-        "five_link": "/search?category=fish-meat"
+        "five_link": "/#categories"
       },
       "checkout": {
         "personal_details": {
