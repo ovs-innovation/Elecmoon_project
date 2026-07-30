@@ -1,3 +1,7 @@
+const dns = require("node:dns/promises");
+dns.setServers(["8.8.8.8", "1.1.1.1"])
+
+
 require("dotenv").config();
 const express = require("express");
 const helmet = require("helmet");
@@ -44,8 +48,12 @@ app.use(async (req, res, next) => {
 
 app.set("trust proxy", 1);
 
-app.use(express.json({ limit: "4mb" }));
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false,
+  })
+);
 
 app.use(cors({
   origin: true, 
@@ -53,6 +61,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+
+app.use(express.json({ limit: "20mb" }));
+app.use(express.urlencoded({ extended: true, limit: "20mb" }));
 
 
 //root route

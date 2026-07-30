@@ -6,7 +6,7 @@ const orderSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Customer",
-      required: true,
+      required: false,
     },
     orderId: {
       type: String,
@@ -90,6 +90,22 @@ const orderSchema = new mongoose.Schema(
       index: true,
     },
     razorpaySignature: {
+      type: String,
+      required: false,
+    },
+    // PhonePe payment fields for traceability + idempotency
+    phonepeMerchantTransactionId: {
+      type: String,
+      required: false,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    phonepeTransactionId: {
+      type: String,
+      required: false,
+    },
+    phonepeResponseCode: {
       type: String,
       required: false,
     },

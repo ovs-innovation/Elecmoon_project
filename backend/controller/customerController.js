@@ -812,11 +812,13 @@ const deleteCustomer = (req, res) => {
 // Save cart for a customer
 const saveCart = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(200).send({ message: "Guest or invalid customer ID", cart: [] });
+    }
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      return res.status(404).send({ message: "Customer not found!" });
+      return res.status(200).send({ message: "Customer not found!", cart: [] });
     }
-    // console.log("saveCart items:", req.body.cart?.length);
     customer.cart = req.body.cart || [];
     customer.markModified("cart");
     await customer.save();
@@ -829,11 +831,13 @@ const saveCart = async (req, res) => {
 // Get cart for a customer
 const getCart = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(200).send({ cart: [] });
+    }
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      return res.status(404).send({ message: "Customer not found!" });
+      return res.status(200).send({ cart: [] });
     }
-    // console.log("getCart items found:", customer.cart?.length);
     res.send({ cart: customer.cart || [] });
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -843,9 +847,12 @@ const getCart = async (req, res) => {
 // Save wishlist for a customer
 const saveWishlist = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(200).send({ message: "Guest or invalid customer ID", wishlist: [] });
+    }
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      return res.status(404).send({ message: "Customer not found!" });
+      return res.status(200).send({ message: "Customer not found!", wishlist: [] });
     }
     customer.wishlist = req.body.wishlist || [];
     customer.markModified("wishlist");
@@ -859,9 +866,12 @@ const saveWishlist = async (req, res) => {
 // Get wishlist for a customer
 const getWishlist = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(200).send({ wishlist: [] });
+    }
     const customer = await Customer.findById(req.params.id);
     if (!customer) {
-      return res.status(404).send({ message: "Customer not found!" });
+      return res.status(200).send({ wishlist: [] });
     }
     res.send({ wishlist: customer.wishlist || [] });
   } catch (err) {

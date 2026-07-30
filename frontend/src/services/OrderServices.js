@@ -18,6 +18,14 @@ const OrderServices = {
     return requests.post("/order/verify/razorpay", body);
   },
 
+  // PhonePe integration methods
+  createPhonePePayment: async (body) => {
+    return requests.post("/order/create-phonepe-payment", body);
+  },
+  verifyPhonePePayment: async (body) => {
+    return requests.post("/order/verify/phonepe", body);
+  },
+
   getOrderCustomer: async ({ page = 1, limit = 8 }) => {
     return requests.get(`/order?limit=${limit}&page=${page}`);
   },

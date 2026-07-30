@@ -63,47 +63,28 @@ const getShowingProducts = async (req, res) => {
 const getAllProducts = async (req, res) => {
   const { title, category, price, page, limit } = req.query;
   let queryObject = {};
-  let sortObject = {};
+  let sortObject = { _id: -1 };
+  const andConditions = [];
+
   if (title) {
+    let decodedTitle = title;
+    try {
+      decodedTitle = decodeURIComponent(title);
+    } catch (e) {}
     const titleQueries = languageCodes.map((lang) => ({
-      [`title.${lang}`]: { $regex: `${title}`, $options: "i" },
+      [`title.${lang}`]: { $regex: `${decodedTitle}`, $options: "i" },
     }));
-    queryObject.$or = titleQueries;
+    andConditions.push({ $or: titleQueries });
   }
 
-  // if (price === "low") {
-  //   sortObject = {
-  //     "prices.originalPrice": 1,
-  //   };
-  // } else if (price === "high") {
-  //   sortObject = {
-  //     "prices.originalPrice": -1,
-  //   };
-  // } else if (price === "published") {
-  //   queryObject.status = "show";
-  // } else if (price === "unPublished") {
-  //   queryObject.status = "hide";
-  // } else if (price === "status-selling") {
-  //   queryObject.stock = { $gt: 0 };
-  // } else if (price === "status-out-of-stock") {
-  //   queryObject.stock = { $lt: 1 };
-  // } else if (price === "date-added-asc") {
-  //   sortObject.createdAt = 1;
-  // } else if (price === "date-updated-asc") {
-  //   sortObject.updatedAt = 1;
-  // } else if (price === "date-updated-desc") {
-  //   sortObject.updatedAt = -1;
-  // } else {
-  //   sortObject = { _id: -1 };
-  // }
-
-  // Default sorting
-  sortObject = { _id: -1 };
-
-  // console.log('sortObject', sortObject);
-
   if (category) {
-    queryObject.categories = category;
+    andConditions.push({
+      $or: [{ category: category }, { categories: category }],
+    });
+  }
+
+  if (andConditions.length > 0) {
+    queryObject.$and = andConditions;
   }
 
   const pages = Number(page);
@@ -327,16 +308,27 @@ const getShowingStoreProducts = async (req, res) => {
   try {
     const { category, slug, variantSlug, title, page, limit } = req.query;
     let queryObject = { status: "show" };
+    const andConditions = [];
 
     if (category) {
-      queryObject.categories = category;
+      andConditions.push({
+        $or: [{ category: category }, { categories: category }],
+      });
     }
 
     if (title) {
+      let decodedTitle = title;
+      try {
+        decodedTitle = decodeURIComponent(title);
+      } catch (e) {}
       const titleQueries = languageCodes.map((lang) => ({
-        [`title.${lang}`]: { $regex: `${title}`, $options: "i" },
+        [`title.${lang}`]: { $regex: `${decodedTitle}`, $options: "i" },
       }));
-      queryObject.$or = titleQueries;
+      andConditions.push({ $or: titleQueries });
+    }
+
+    if (andConditions.length > 0) {
+      queryObject.$and = andConditions;
     }
 
     // If slug is provided, search by main product slug

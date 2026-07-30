@@ -33,7 +33,7 @@ const Checkout = () => {
   const { currency, getNumber } = useUtilsFunction();
 
   const [loading, setLoading] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("Cash");
+  const [paymentMethod, setPaymentMethod] = useState("PhonePe");
   const [checkoutStep, setCheckoutStep] = useState(1); // 1 = Details, 2 = Review & Payment
   const [shippingData, setShippingData] = useState(null);
 
@@ -46,7 +46,22 @@ const Checkout = () => {
 
   const [buyNowItem, setBuyNowItem] = useState(null);
 
-  const isBuyNowFlow = Boolean(router.query?.buyNow && router.query?.id);
+  useEffect(() => {
+    if (router.query.error) {
+      const errorMsg =
+        router.query.msg ||
+        (router.query.error === "payment_cancelled"
+          ? "Payment was cancelled."
+          : "Payment failed. Please try again.");
+      toast.error(errorMsg);
+    }
+  }, [router.query.error, router.query.msg]);
+
+  const isBuyNowFlow = Boolean(
+    buyNowItem ||
+    (router.query?.buyNow && router.query?.id) ||
+    (typeof window !== "undefined" && window.location.search.includes("buyNow=true"))
+  );
 
   const getQueryString = (value) => {
     if (Array.isArray(value)) return value[0];
@@ -55,43 +70,50 @@ const Checkout = () => {
 
   // Parse Buy Now item if it exists in query
   useEffect(() => {
-    if (router.query.buyNow && router.query.id) {
-      const qId = getQueryString(router.query.id);
-      const qTitle = getQueryString(router.query.title);
-      const qPrice = getQueryString(router.query.price);
-      const qImage = getQueryString(router.query.image);
-      const qQty = getQueryString(router.query.quantity);
-      const qDeliveryCharge = getQueryString(router.query.deliveryCharge);
+    const qId = getQueryString(router.query.id) || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("id") : null);
+    const qBuyNow = router.query.buyNow || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("buyNow") === "true" : false);
+
+    if (qBuyNow && qId) {
+      const qTitle = getQueryString(router.query.title) || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("title") : null);
+      const qPrice = getQueryString(router.query.price) || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("price") : null);
+      const qImage = getQueryString(router.query.image) || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("image") : null);
+      const qQty = getQueryString(router.query.quantity) || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("quantity") : null);
+      const qDeliveryCharge = getQueryString(router.query.deliveryCharge) || (typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("deliveryCharge") : null);
 
       const qty = parseInt(qQty, 10) || 1;
       const stored = loadBuyNowPricing(qId) || {};
+      const parsedPrice = parseFloat(qPrice) || parseFloat(stored.price) || parseFloat(stored.listPrice) || 0;
+
       const line = {
+        _id: qId,
         id: qId,
-        name: qTitle,
-        price: parseFloat(qPrice),
-        image: qImage,
+        name: qTitle || stored.name || stored.title || "Product",
+        title: qTitle || stored.title || stored.name || "Product",
+        price: parsedPrice,
+        image: qImage || stored.image || "",
         quantity: qty,
         minQty: stored.minQty || qty,
         maxQty: stored.maxQty || 0,
         quantityTiers: stored.quantityTiers || [],
-        listPrice: stored.listPrice || parseFloat(qPrice),
-        deliveryCharge: parseFloat(qDeliveryCharge) || 0,
-        gstPercentage: parseFloat(getQueryString(router.query.gstPercentage)) || 0,
-        basePrice: parseFloat(getQueryString(router.query.basePrice)) || parseFloat(qPrice),
-        sku: getQueryString(router.query.sku) || "",
-        barcode: getQueryString(router.query.barcode) || "",
-        variant: {},
+        listPrice: stored.listPrice || parsedPrice,
+        deliveryCharge: parseFloat(qDeliveryCharge) || stored.deliveryCharge || 0,
+        gstPercentage: parseFloat(getQueryString(router.query.gstPercentage)) || stored.gstPercentage || 0,
+        basePrice: parseFloat(getQueryString(router.query.basePrice)) || stored.basePrice || parsedPrice,
+        sku: getQueryString(router.query.sku) || stored.sku || "",
+        barcode: getQueryString(router.query.barcode) || stored.barcode || "",
+        variant: stored.variant || {},
       };
       const resolved = resolveCartLinePrice(line, qty);
+      const finalPrice = resolved.price || parsedPrice || 0;
       setBuyNowItem({
         ...line,
-        quantity: resolved.quantity,
-        price: resolved.price,
-        itemTotal: resolved.price * resolved.quantity,
+        quantity: resolved.quantity || qty,
+        price: finalPrice,
+        itemTotal: finalPrice * (resolved.quantity || qty),
       });
-
     }
   }, [
+    router.isReady,
     router.query.buyNow,
     router.query.id,
     router.query.title,
@@ -104,7 +126,6 @@ const Checkout = () => {
     router.query.sku,
     router.query.barcode,
   ]);
-
 
   const incrementBuyNow = () => {
     setBuyNowItem((prev) => {
@@ -134,24 +155,26 @@ const Checkout = () => {
 
   // Determine current items to display/order
   const orderItems = useMemo(() => {
-    const currentItems = buyNowItem ? [buyNowItem] : items;
-    return currentItems.map((item) => {
+    const currentItems = (buyNowItem || isBuyNowFlow) ? (buyNowItem ? [buyNowItem] : []) : items;
+    return (currentItems || []).map((item) => {
       const unitPrice = parseFloat(item?.price) || 0;
-      const quantity = parseInt(item?.quantity) || 0;
+      const quantity = parseInt(item?.quantity, 10) || 1;
       const itemTotal =
-        typeof item?.itemTotal === "number"
+        typeof item?.itemTotal === "number" && !isNaN(item.itemTotal)
           ? item.itemTotal
-          : parseFloat(item?.itemTotal) || unitPrice * quantity;
+          : unitPrice * quantity;
 
       return {
         ...item,
+        _id: item._id || item.id,
+        id: item.id || item._id,
         quantity,
         price: unitPrice,
         itemTotal,
         variant: item.variant || {},
       };
     });
-  }, [buyNowItem, items]);
+  }, [isBuyNowFlow, buyNowItem, items]);
 
   const currentTotal = useMemo(() => {
     return orderItems.reduce(
@@ -207,6 +230,11 @@ const Checkout = () => {
 
   const placeOrder = async () => {
     if (!shippingData) return;
+    if (!orderItems || orderItems.length === 0) {
+      toast.error("Cart is empty. Please select a product to checkout.");
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
 
@@ -221,8 +249,9 @@ const Checkout = () => {
           zipCode: shippingData.zipCode,
         },
         cart: orderItems.map((item) => ({
-          id: item.id,
-          title: item.name,
+          _id: item._id || item.id,
+          id: item.id || item._id,
+          title: item.title || item.name || "Product",
           image: item.image,
           price: item.price,
           quantity: item.quantity,
@@ -240,6 +269,17 @@ const Checkout = () => {
         discount: 0,
         total: grandTotal,
       };
+
+      if (paymentMethod === "PhonePe") {
+        const phonepeRes = await OrderServices.createPhonePePayment(orderPayloadBase);
+        if (phonepeRes?.success && phonepeRes?.redirectUrl) {
+          toast.loading("Redirecting to PhonePe gateway...");
+          window.location.href = phonepeRes.redirectUrl;
+          return;
+        } else {
+          throw new Error(phonepeRes?.message || "Failed to initialize PhonePe payment");
+        }
+      }
 
       if (paymentMethod === "Cash") {
         const orderData = {
@@ -744,15 +784,49 @@ const Checkout = () => {
                             </h3>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div
+                              onClick={() => setPaymentMethod("PhonePe")}
+                              className={`p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between ${paymentMethod === "PhonePe"
+                                  ? "border-purple-600 bg-purple-50/50 shadow-sm"
+                                  : "border-gray-100 bg-white hover:border-gray-200"
+                                }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "PhonePe"
+                                      ? "border-purple-600"
+                                      : "border-gray-300"
+                                    }`}
+                                >
+                                  {paymentMethod === "PhonePe" && (
+                                    <div className="w-2.5 h-2.5 rounded-full bg-purple-600" />
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-1.5">
+                                    <p className="font-bold text-sm text-[#0b1d3d]">
+                                      PhonePe
+                                    </p>
+                                    <span className="text-[9px] bg-purple-600 text-white font-extrabold px-1.5 py-0.5 rounded uppercase">
+                                      Fast
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                    UPI / QR / Cards / NetBanking
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
                             <div
                               onClick={() => setPaymentMethod("Cash")}
-                              className={`p-6 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between ${paymentMethod === "Cash"
+                              className={`p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between ${paymentMethod === "Cash"
                                   ? "border-[#0b1d3d] bg-blue-50/50"
                                   : "border-gray-100 bg-white hover:border-gray-200"
                                 }`}
                             >
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-3">
                                 <div
                                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "Cash"
                                       ? "border-[#0b1d3d]"
@@ -776,12 +850,12 @@ const Checkout = () => {
 
                             <div
                               onClick={() => setPaymentMethod("Razorpay")}
-                              className={`p-6 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between opacity-50 ${paymentMethod === "Razorpay"
+                              className={`p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between opacity-70 ${paymentMethod === "Razorpay"
                                   ? "border-[#0b1d3d] bg-blue-50/50 opacity-100"
-                                  : "border-gray-100 bg-white opacity-50 hover:opacity-100"
+                                  : "border-gray-100 bg-white opacity-70 hover:opacity-100"
                                 }`}
                             >
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-3">
                                 <div
                                   className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "Razorpay"
                                       ? "border-[#0b1d3d]"
@@ -797,7 +871,7 @@ const Checkout = () => {
                                     Razorpay
                                   </p>
                                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                                    UPI / Card / NetBanking
+                                    Online Gateway
                                   </p>
                                 </div>
                               </div>

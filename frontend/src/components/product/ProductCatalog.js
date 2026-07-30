@@ -111,9 +111,15 @@ const ProductCatalog = () => {
   };
 
   const filteredProducts = products.filter((p) => {
-    const matchesCategory = !selectedCategory ||
-      p.category === selectedCategory ||
-      (p.categories && p.categories.some(cat => cat._id === selectedCategory));
+    const pCatId = (p.category?._id || p.category)?.toString();
+    const selectedCatStr = selectedCategory ? selectedCategory.toString() : "";
+    const matchesCategory =
+      !selectedCategory ||
+      pCatId === selectedCatStr ||
+      (Array.isArray(p.categories) &&
+        p.categories.some(
+          (cat) => (cat?._id || cat)?.toString() === selectedCatStr
+        ));
 
     // Convert price to number safely
     const price = parseFloat(p.price) || 0;

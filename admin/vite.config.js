@@ -109,8 +109,8 @@ export default defineConfig({
     },
   },
   define: {
-    "process.env": process.env,
-    // global: {}, //enable this when running on dev/local mode
+    "process.env": {},
+    global: "window",
   },
 
   resolve: {

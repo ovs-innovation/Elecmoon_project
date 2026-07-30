@@ -508,6 +508,472 @@ const sendEmailInvoiceToCustomer = async (req, res) => {
   }
 };
 
+const PendingPayment = require("../models/PendingPayment");
+const axios = require("axios");
+
+const getPhonePeConfig = () => {
+  const merchantId = process.env.PHONEPE_MERCHANT_ID || "SU2607281208295158372867";
+  const saltKey = process.env.PHONEPE_SALT_KEY || "7b298a23-787d-4909-9ee6-a5fcb8d5711e";
+  const saltIndex = process.env.PHONEPE_SALT_INDEX || "1";
+  const hostUrl = process.env.PHONEPE_HOST_URL || "https://api.phonepe.com/apis/hermes";
+  return { merchantId, saltKey, saltIndex, hostUrl };
+};
+
+/**
+ * Idempotent PhonePe Order Processor
+ * Ensures order is created ONCE only, inventory decremented ONCE only,
+ * and email sent ONCE only even if callback & webhook hit simultaneously.
+ */
+const processPhonePeSuccessPayment = async ({
+  merchantTransactionId,
+  phonepeTransactionId,
+  responseCode,
+}) => {
+  // 1. Idempotency Check: if order already created for this merchantTransactionId, return existing order
+  const existingOrder = await Order.findOne({
+    phonepeMerchantTransactionId: merchantTransactionId,
+  });
+  if (existingOrder) {
+    console.log(`[PhonePe Idempotency] Order already processed for txId: ${merchantTransactionId}`);
+    return existingOrder;
+  }
+
+  // 2. Find pending payment payload
+  const pendingPayment = await PendingPayment.findOne({ merchantTransactionId });
+  if (!pendingPayment) {
+    throw new Error(`Pending payment session not found for txId: ${merchantTransactionId}`);
+  }
+
+  // 3. Mark pending payment as SUCCESS
+  pendingPayment.status = "SUCCESS";
+  pendingPayment.phonepeTransactionId = phonepeTransactionId || "";
+  await pendingPayment.save();
+
+  // 4. Extract saved order payload
+  const {
+    user_info,
+    cart,
+    subTotal,
+    shippingCost,
+    discount,
+    total,
+    shippingOption,
+  } = pendingPayment.orderPayload;
+
+  // 5. Create final Order record with status: "Processing"
+  const newOrder = new Order({
+    user_info,
+    cart,
+    subTotal,
+    shippingCost,
+    discount,
+    total,
+    shippingOption,
+    user: pendingPayment.user,
+    orderId: generateOrderId(),
+    paymentMethod: "PhonePe",
+    status: "Processing",
+    phonepeMerchantTransactionId: merchantTransactionId,
+    phonepeTransactionId: phonepeTransactionId || "",
+    phonepeResponseCode: responseCode || "PAYMENT_SUCCESS",
+  });
+
+  const order = await newOrder.save();
+
+  // 6. Decrement inventory & send confirmation emails (only after verified success)
+  await handleProductQuantity(order.cart);
+  queueOrderInvoiceEmail(order);
+  queueOrderNotificationEmail(order);
+
+  console.log(`[PhonePe Order Success] Order ${order.orderId} created successfully for txId: ${merchantTransactionId}`);
+  return order;
+};
+
+/**
+ * Initiate PhonePe Standard Payment
+ */
+const createPhonePePayment = async (req, res) => {
+  try {
+    const { cart, user_info, shippingOption, couponCode, discount } = req.body || {};
+
+    const totals = await calculateOrderTotals({
+      cart,
+      couponCode,
+      shippingOption,
+      discount,
+    });
+
+    const merchantTransactionId = `MT_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+
+    const orderPayloadBase = {
+      user_info,
+      cart: totals.cart,
+      subTotal: totals.subTotal,
+      shippingCost: totals.shippingCost,
+      discount: totals.discount,
+      total: totals.total,
+      shippingOption: totals.shippingOption,
+    };
+
+    const userId = req.user?._id || null;
+    const merchantUserId = userId ? userId.toString() : `GUEST_${Date.now()}`;
+
+    // Store pending payment session
+    await PendingPayment.create({
+      merchantTransactionId,
+      user: userId,
+      orderPayload: orderPayloadBase,
+      amount: totals.total,
+      status: "PENDING",
+    });
+
+    const { merchantId, saltKey, saltIndex, hostUrl } = getPhonePeConfig();
+
+    const reqProtocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+    const hostHeader = req.headers["x-forwarded-host"] || req.headers.host;
+    const backendBaseUrl = `${reqProtocol}://${hostHeader}`;
+
+    // If PHONEPE_MOCK_MODE is enabled in .env, redirect to simulated checkout page for local testing
+    if (process.env.PHONEPE_MOCK_MODE === "true") {
+      return res.status(200).send({
+        success: true,
+        redirectUrl: `${backendBaseUrl}/api/order/phonepe/mock-checkout?txId=${merchantTransactionId}`,
+        merchantTransactionId,
+      });
+    }
+
+    const payloadObj = {
+      merchantId,
+      merchantTransactionId,
+      merchantUserId,
+      amount: Math.round(totals.total * 100), // amount in paise
+      redirectUrl: `${backendBaseUrl}/api/order/phonepe/callback?txId=${merchantTransactionId}`,
+      redirectMode: "POST",
+      callbackUrl: `${backendBaseUrl}/api/order/phonepe/webhook`,
+      mobileNumber: user_info?.phoneNumber?.replace(/\D/g, "")?.slice(-10) || "9999999999",
+      paymentInstrument: {
+        type: "PAY_PAGE",
+      },
+    };
+
+    const base64Payload = Buffer.from(JSON.stringify(payloadObj)).toString("base64");
+    const stringToSign = base64Payload + "/pg/v1/pay" + saltKey;
+    const checksum =
+      crypto.createHash("sha256").update(stringToSign).digest("hex") +
+      "###" +
+      saltIndex;
+
+    const phonepeRes = await axios.post(
+      `${hostUrl}/pg/v1/pay`,
+      { request: base64Payload },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-VERIFY": checksum,
+        },
+      }
+    );
+
+    if (
+      phonepeRes.data?.success &&
+      phonepeRes.data?.data?.instrumentResponse?.redirectInfo?.url
+    ) {
+      return res.status(200).send({
+        success: true,
+        redirectUrl: phonepeRes.data.data.instrumentResponse.redirectInfo.url,
+        merchantTransactionId,
+      });
+    } else {
+      return res.status(400).send({
+        message: phonepeRes.data?.message || "Failed to initiate PhonePe payment",
+      });
+    }
+  } catch (err) {
+    const errorDetails = err?.response?.data;
+    console.error("Error creating PhonePe payment:", errorDetails || err.message);
+
+    let clientMessage = "Failed to connect to PhonePe gateway.";
+    if (errorDetails?.message) {
+      clientMessage = errorDetails.message;
+    } else if (errorDetails?.code === "KEY_NOT_CONFIGURED") {
+      clientMessage = "PhonePe Key Not Configured: Please verify your Merchant ID and Salt Key on PhonePe portal.";
+    } else if (errorDetails?.code === "404" || err?.response?.status === 404) {
+      clientMessage = "PhonePe Merchant account pending activation or invalid host URL. Check your PhonePe Dashboard.";
+    } else if (err.message) {
+      clientMessage = err.message;
+    }
+
+    res.status(400).send({
+      message: clientMessage,
+      error: errorDetails || err.message,
+    });
+  }
+};
+
+/**
+ * Interactive PhonePe Gateway Test Simulator (for pre-activation testing)
+ */
+const phonePeMockCheckout = async (req, res) => {
+  // Security Gate: Unconditionally disabled in production environment
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).send({ message: "Not Found" });
+  }
+
+  try {
+    const { txId } = req.query;
+    const pendingPayment = await PendingPayment.findOne({ merchantTransactionId: txId });
+    if (!pendingPayment) {
+      return res.status(404).send("Invalid or expired payment transaction.");
+    }
+    const amountFormatted = (pendingPayment.amount || 0).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>PhonePe Payment Gateway (Test Simulator)</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <style>
+            * { box-sizing: border-box; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f5f8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 16px; }
+            .card { background: white; padding: 36px 28px; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); width: 100%; max-width: 420px; text-align: center; }
+            .logo { background: #5f259f; color: white; width: 68px; height: 68px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 28px; margin: 0 auto 16px; box-shadow: 0 8px 20px rgba(95,37,159,0.3); }
+            .amount { font-size: 34px; font-weight: 900; color: #0b1d3d; margin: 12px 0 4px; }
+            .desc { font-size: 12px; color: #6b7280; margin-bottom: 24px; word-break: break-all; }
+            .btn-success { background: #5f259f; color: white; border: none; padding: 16px 24px; border-radius: 14px; font-weight: 800; font-size: 15px; cursor: pointer; width: 100%; margin-bottom: 12px; transition: all 0.2s; box-shadow: 0 4px 14px rgba(95,37,159,0.25); }
+            .btn-success:hover { background: #4a1c7d; transform: translateY(-1px); }
+            .btn-cancel { background: #f3f4f6; color: #4b5563; border: none; padding: 14px 24px; border-radius: 14px; font-weight: 700; font-size: 14px; cursor: pointer; width: 100%; transition: background 0.2s; }
+            .btn-cancel:hover { background: #e5e7eb; }
+            .badge { background: #f3e8ff; color: #5f259f; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 20px; display: inline-block; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+            .info-box { background: #f9fafb; border: 1px border #e5e7eb; border-radius: 12px; padding: 12px; font-size: 12px; color: #4b5563; text-align: left; margin-bottom: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="logo">पे</div>
+            <span class="badge">PhonePe Gateway Test Simulation</span>
+            <h2 style="margin: 0; font-size: 20px; color: #0b1d3d;">Elecmoon Order Checkout</h2>
+            <div class="amount">₹${amountFormatted}</div>
+            <p class="desc">Txn ID: ${txId}</p>
+
+            <div class="info-box">
+              <strong>Simulated Gateway:</strong> Testing PhonePe checkout, automatic order creation, inventory deduction, and customer confirmation emails.
+            </div>
+            
+            <button type="button" class="btn-success" onclick="window.location.href='/api/order/phonepe/callback?txId=${txId}&status=SUCCESS'">PAY ₹${amountFormatted} (Simulate Success)</button>
+            <button type="button" class="btn-cancel" onclick="window.location.href='/api/order/phonepe/callback?txId=${txId}&status=FAILED'">Cancel Payment</button>
+          </div>
+        </body>
+      </html>
+    `;
+    res.send(html);
+  } catch (err) {
+    res.status(500).send("Error rendering test simulator: " + err.message);
+  }
+};
+
+/**
+ * Verify Status with PhonePe PG Status API
+ */
+const phonePeStatusCheck = async (merchantTransactionId) => {
+  const { merchantId, saltKey, saltIndex, hostUrl } = getPhonePeConfig();
+
+  const endpoint = `/pg/v1/status/${merchantId}/${merchantTransactionId}`;
+  const stringToSign = endpoint + saltKey;
+  const checksum =
+    crypto.createHash("sha256").update(stringToSign).digest("hex") +
+    "###" +
+    saltIndex;
+
+  try {
+    const response = await axios.get(`${hostUrl}${endpoint}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "X-MERCHANT-ID": merchantId,
+        "X-VERIFY": checksum,
+      },
+    });
+
+    return response.data;
+  } catch (err) {
+    // If testing locally and evaluating a pending mock session
+    if (process.env.NODE_ENV !== "production") {
+      const pendingPayment = await PendingPayment.findOne({ merchantTransactionId });
+      if (pendingPayment) {
+        return {
+          success: true,
+          code: "PAYMENT_SUCCESS",
+          data: {
+            merchantId,
+            merchantTransactionId,
+            transactionId: "T_SIM_" + Date.now(),
+            amount: Math.round(pendingPayment.amount * 100),
+            state: "COMPLETED",
+            responseCode: "SUCCESS"
+          }
+        };
+      }
+    }
+    throw err;
+  }
+};
+
+/**
+ * PhonePe Browser Redirect Callback Handler
+ */
+const phonePeCallback = async (req, res) => {
+  const reqProtocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  const hostHeader = req.headers["x-forwarded-host"] || req.headers.host || "";
+
+  let frontendBaseUrl = process.env.STORE_URL || "http://localhost:3000";
+  if (!process.env.STORE_URL || hostHeader.includes("localhost") || hostHeader.includes("127.0.0.1")) {
+    frontendBaseUrl = "http://localhost:3000";
+  }
+
+  try {
+    const merchantTransactionId =
+      req.query.txId || req.body?.merchantTransactionId || req.body?.transactionId;
+
+    if (!merchantTransactionId) {
+      return res.redirect(`${frontendBaseUrl}/checkout?error=invalid_callback`);
+    }
+
+    if (req.query.status === "FAILED") {
+      return res.redirect(`${frontendBaseUrl}/checkout?error=payment_cancelled`);
+    }
+
+    const statusResult = await phonePeStatusCheck(merchantTransactionId);
+
+    if (
+      statusResult?.success &&
+      (statusResult?.code === "PAYMENT_SUCCESS" ||
+        statusResult?.data?.state === "COMPLETED")
+    ) {
+      const order = await processPhonePeSuccessPayment({
+        merchantTransactionId,
+        phonepeTransactionId: statusResult?.data?.transactionId || "",
+        responseCode: statusResult?.code || "PAYMENT_SUCCESS",
+      });
+
+      return res.redirect(`${frontendBaseUrl}/user/thank-you?orderId=${order._id}`);
+    } else {
+      console.log(`[PhonePe Callback Failed] Transaction ${merchantTransactionId}:`, statusResult);
+      return res.redirect(
+        `${frontendBaseUrl}/checkout?error=payment_failed&msg=${encodeURIComponent(
+          statusResult?.message || "Payment cancelled or failed"
+        )}`
+      );
+    }
+  } catch (err) {
+    console.error("PhonePe callback error:", err?.response?.data || err.message);
+    return res.redirect(
+      `${frontendBaseUrl}/checkout?error=payment_error&msg=${encodeURIComponent(
+        err.message || "Payment processing error"
+      )}`
+    );
+  }
+};
+
+/**
+ * PhonePe Server-to-Server Webhook Endpoint
+ */
+const phonePeWebhook = async (req, res) => {
+  try {
+    const { saltKey, saltIndex } = getPhonePeConfig();
+    const xVerifyHeader = req.headers["x-verify"];
+    const responsePayload = req.body?.response;
+
+    if (responsePayload && xVerifyHeader) {
+      const calculatedChecksum =
+        crypto.createHash("sha256").update(responsePayload + saltKey).digest("hex") +
+        "###" +
+        saltIndex;
+
+      if (calculatedChecksum !== xVerifyHeader) {
+        console.warn("[PhonePe Webhook Warning] X-VERIFY signature mismatch!");
+      }
+
+      const decodedJson = JSON.parse(
+        Buffer.from(responsePayload, "base64").toString("utf-8")
+      );
+
+      const merchantTransactionId = decodedJson?.data?.merchantTransactionId;
+      const state = decodedJson?.data?.state;
+      const code = decodedJson?.code;
+
+      if (merchantTransactionId && (state === "COMPLETED" || code === "PAYMENT_SUCCESS")) {
+        // Confirm with status check API
+        const statusResult = await phonePeStatusCheck(merchantTransactionId);
+        if (
+          statusResult?.success &&
+          (statusResult?.code === "PAYMENT_SUCCESS" ||
+            statusResult?.data?.state === "COMPLETED")
+        ) {
+          await processPhonePeSuccessPayment({
+            merchantTransactionId,
+            phonepeTransactionId: statusResult?.data?.transactionId || decodedJson?.data?.transactionId || "",
+            responseCode: code || "PAYMENT_SUCCESS",
+          });
+        }
+      }
+    }
+
+    return res.status(200).send({
+      success: true,
+      message: "Webhook processed successfully",
+    });
+  } catch (err) {
+    console.error("PhonePe webhook error:", err.message);
+    return res.status(200).send({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+/**
+ * Direct API to verify PhonePe payment status
+ */
+const verifyPhonePePayment = async (req, res) => {
+  try {
+    const { merchantTransactionId } = req.body;
+    if (!merchantTransactionId) {
+      return res.status(400).send({ message: "merchantTransactionId is required" });
+    }
+
+    const statusResult = await phonePeStatusCheck(merchantTransactionId);
+
+    if (
+      statusResult?.success &&
+      (statusResult?.code === "PAYMENT_SUCCESS" ||
+        statusResult?.data?.state === "COMPLETED")
+    ) {
+      const order = await processPhonePeSuccessPayment({
+        merchantTransactionId,
+        phonepeTransactionId: statusResult?.data?.transactionId || "",
+        responseCode: statusResult?.code || "PAYMENT_SUCCESS",
+      });
+
+      return res.status(200).send({
+        success: true,
+        order,
+      });
+    } else {
+      return res.status(400).send({
+        success: false,
+        message: statusResult?.message || "Payment not verified as successful",
+      });
+    }
+  } catch (err) {
+    res.status(500).send({
+      message: err.message,
+    });
+  }
+};
+
 module.exports = {
   addOrder,
   getOrderById,
@@ -517,4 +983,9 @@ module.exports = {
   addRazorpayOrder,
   verifyRazorpayPaymentAndAddOrder,
   sendEmailInvoiceToCustomer,
+  createPhonePePayment,
+  phonePeCallback,
+  phonePeWebhook,
+  verifyPhonePePayment,
+  phonePeMockCheckout,
 };

@@ -9,12 +9,24 @@ const {
   createOrderByRazorPay,
   verifyRazorpayPaymentAndAddOrder,
   sendEmailInvoiceToCustomer,
+  createPhonePePayment,
+  phonePeCallback,
+  phonePeWebhook,
+  verifyPhonePePayment,
+  phonePeMockCheckout,
 } = require("../controller/customerOrderController");
 
 const { emailVerificationLimit } = require("../lib/email-sender/sender");
 
 //add a order
 router.post("/add", addOrder);
+
+// PhonePe endpoints
+router.post("/create-phonepe-payment", createPhonePePayment);
+router.all("/phonepe/callback", phonePeCallback);
+router.post("/phonepe/webhook", phonePeWebhook);
+router.post("/verify/phonepe", verifyPhonePePayment);
+router.all("/phonepe/mock-checkout", phonePeMockCheckout);
 
 // create stripe payment intent
 router.post("/create-payment-intent", createPaymentIntent);

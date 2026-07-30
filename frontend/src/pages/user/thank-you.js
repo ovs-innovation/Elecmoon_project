@@ -10,6 +10,9 @@ import Loading from "@components/preloader/Loading";
 import OrderServices from "@services/OrderServices";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 
+import { useCart } from "react-use-cart";
+import { useEffect } from "react";
+
 const StatusLabel = ({ status }) => {
   if (status === "Delivered") {
     return <span className="text-green-600 font-bold">{status}</span>;
@@ -30,6 +33,11 @@ const ThankYouPage = () => {
   const router = useRouter();
   const { orderId } = router.query;
   const { currency, getNumber } = useUtilsFunction();
+  const { emptyCart } = useCart();
+
+  useEffect(() => {
+    emptyCart();
+  }, []);
 
   const { data, error, isLoading } = useQuery({
     queryKey: ["order-by-id", orderId],
