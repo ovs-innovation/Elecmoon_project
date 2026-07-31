@@ -1,0 +1,60 @@
+# Elecmoon production stack (VPS / Docker Compose)
+# Usage on VPS:
+#   docker compose --env-file backend/.env up -d --build
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: elecmoon-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: production
+      PORT: "8083"
+    ports:
+      - "8083:8083"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:8083/',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-https://api.elecmoon.com/api}
+        NEXTAUTH_URL: ${NEXTAUTH_URL:-https://elecmoon.com}
+    container_name: elecmoon-frontend
+    restart: unless-stopped
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile
+      args:
+        VITE_APP_API_BASE_URL: ${VITE_APP_API_BASE_URL:-https://api.elecmoon.com/api}
+    container_name: elecmoon-admin
+    restart: unless-stopped
+    env_file:
+      - ./admin/.env
+    ports:
+      - "4173:80"
+    depends_on:
+      - backend
