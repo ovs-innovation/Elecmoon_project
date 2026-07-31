@@ -115,6 +115,19 @@ const PORT = process.env.PORT || 5058;
 connectDB()
   .then(() => {
     app.listen(PORT, () => console.log(`server running on port ${PORT}`));
+
+    // Local / long-running process: expire unpaid PhonePe pendings every 5 min.
+    // On Vercel, use vercel.json crons hitting /api/order/payments/expire-pending
+    if (process.env.VERCEL !== "1") {
+      const PendingOrderExpiryService = require("../services/payment/PendingOrderExpiryService");
+      const FIVE_MIN = 5 * 60 * 1000;
+      setInterval(() => {
+        PendingOrderExpiryService.run().catch((err) =>
+          console.error("[Payment][Expiry] interval error:", err.message)
+        );
+      }, FIVE_MIN);
+      PendingOrderExpiryService.run().catch(() => null);
+    }
   })
   .catch((err) => {
     console.error("Failed to start server:", err.message);

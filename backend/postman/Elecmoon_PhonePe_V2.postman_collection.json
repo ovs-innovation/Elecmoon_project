@@ -1,0 +1,82 @@
+{
+  "info": {
+    "name": "Elecmoon PhonePe V2 Payments",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Production PhonePe PG V2 payment APIs for Elecmoon"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8083/api" },
+    { "key": "token", "value": "" },
+    { "key": "merchantOrderId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Create PhonePe Payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Origin", "value": "https://elecmoon.vercel.app" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_info\": {\n    \"name\": \"Test User\",\n    \"email\": \"test@elecmoon.com\",\n    \"contact\": \"9717372217\",\n    \"address\": \"Test Address\",\n    \"city\": \"Delhi\",\n    \"country\": \"India\",\n    \"zipCode\": \"110001\"\n  },\n  \"cart\": [],\n  \"shippingOption\": \"Product Delivery\",\n  \"discount\": 0\n}"
+        },
+        "url": "{{baseUrl}}/order/create-phonepe-payment"
+      }
+    },
+    {
+      "name": "Verify PhonePe Payment",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"merchantOrderId\": \"{{merchantOrderId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/order/verify/phonepe"
+      }
+    },
+    {
+      "name": "PhonePe Webhook",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "{{webhookSha256}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"PG_ORDER_COMPLETED\",\n  \"payload\": {\n    \"merchantOrderId\": \"{{merchantOrderId}}\",\n    \"state\": \"COMPLETED\",\n    \"amount\": 10000\n  }\n}"
+        },
+        "url": "{{baseUrl}}/order/phonepe/webhook"
+      }
+    },
+    {
+      "name": "PhonePe Callback (browser)",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/order/phonepe/callback?merchantOrderId={{merchantOrderId}}"
+      }
+    },
+    {
+      "name": "COD Add Order",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_info\": {\n    \"name\": \"Test User\",\n    \"email\": \"test@elecmoon.com\",\n    \"contact\": \"9717372217\",\n    \"address\": \"Test\",\n    \"city\": \"Delhi\",\n    \"country\": \"India\",\n    \"zipCode\": \"110001\"\n  },\n  \"cart\": [],\n  \"shippingOption\": \"Product Delivery\",\n  \"discount\": 0,\n  \"paymentMethod\": \"Cash\"\n}"
+        },
+        "url": "{{baseUrl}}/order/add"
+      }
+    }
+  ]
+}

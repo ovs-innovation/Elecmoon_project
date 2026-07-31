@@ -182,9 +182,7 @@ const Orders = () => {
                     </option>
 
                     <option value="Cash">{t("Cash")}</option>
-                    <option value="Card">{t("Card")}</option>
-                    <option value="Credit">{t("Credit")}</option>
-                    <option value="Razorpay">Razorpay</option>
+                    <option value="PhonePe">PhonePe</option>
                   </Select>
                 </div>
                 <div>

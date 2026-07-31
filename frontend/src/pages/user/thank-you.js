@@ -35,15 +35,33 @@ const ThankYouPage = () => {
   const { currency, getNumber } = useUtilsFunction();
   const { emptyCart } = useCart();
 
-  useEffect(() => {
-    emptyCart();
-  }, []);
-
   const { data, error, isLoading } = useQuery({
     queryKey: ["order-by-id", orderId],
     enabled: !!orderId,
     queryFn: () => OrderServices.getOrderById(orderId),
   });
+
+  useEffect(() => {
+    // Only clear cart after a confirmed paid / COD order loads
+    if (
+      data &&
+      (data.paymentMethod === "Cash" ||
+        data.paymentStatus === "PAID" ||
+        data.paymentStatus === "paid")
+    ) {
+      emptyCart();
+    }
+  }, [data, emptyCart]);
+
+  const isConfirmed =
+    data?.paymentMethod === "Cash" ||
+    data?.paymentStatus === "PAID" ||
+    data?.paymentStatus === "paid";
+  const isFailed =
+    data?.paymentStatus === "FAILED" ||
+    data?.paymentStatus === "CANCELLED" ||
+    data?.paymentStatus === "failed";
+
 
   return (
     <Layout title="Thank you" description="Order confirmation page">
@@ -59,13 +77,33 @@ const ThankYouPage = () => {
             ) : (
               <>
                 <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center">
-                    <FiCheckCircle className="w-8 h-8 text-green-600" />
+                  <div
+                    className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                      isFailed
+                        ? "bg-red-50"
+                        : isConfirmed
+                          ? "bg-green-50"
+                          : "bg-amber-50"
+                    }`}
+                  >
+                    <FiCheckCircle
+                      className={`w-8 h-8 ${
+                        isFailed
+                          ? "text-red-600"
+                          : isConfirmed
+                            ? "text-green-600"
+                            : "text-amber-600"
+                      }`}
+                    />
                   </div>
 
                   <div>
                     <h1 className="text-2xl font-black text-gray-900">
-                      Thank you for your order
+                      {isFailed
+                        ? "Payment not completed"
+                        : isConfirmed
+                          ? "Thank you for your order"
+                          : "Payment pending verification"}
                     </h1>
                     <p className="text-gray-600 mt-1">
                       Order ID:{" "}
@@ -73,12 +111,24 @@ const ThankYouPage = () => {
                         {data?.orderId || data?.invoice || data?._id?.substring(20, 24) || orderId}
                       </span>
                     </p>
-                    {data?.user_info?.email && (
+                    {isConfirmed && data?.user_info?.email && (
                       <p className="text-sm text-gray-500 mt-2">
                         Invoice has been sent to{" "}
                         <span className="font-semibold text-gray-700">
                           {data.user_info.email}
                         </span>
+                      </p>
+                    )}
+                    {!isConfirmed && !isFailed && (
+                      <p className="text-sm text-amber-700 mt-2">
+                        We are confirming your payment with PhonePe. Refresh this
+                        page or check My Orders shortly.
+                      </p>
+                    )}
+                    {isFailed && (
+                      <p className="text-sm text-red-600 mt-2">
+                        {data?.failureReason ||
+                          "Payment failed. Inventory was not reduced."}
                       </p>
                     )}
                   </div>

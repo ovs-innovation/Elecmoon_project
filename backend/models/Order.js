@@ -75,22 +75,49 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    cardInfo: {
-      type: Object,
-      required: false,
-    },
-    // Razorpay payment fields for traceability + idempotency
-    razorpayOrderId: {
+    paymentMethodDetail: {
       type: String,
       required: false,
+      default: "",
     },
-    razorpayPaymentId: {
+    paymentStatus: {
       type: String,
+      enum: [
+        "PENDING",
+        "PROCESSING",
+        "PAID",
+        "FAILED",
+        "CANCELLED",
+        "REFUNDED",
+        // legacy lowercase values (pre-migration)
+        "pending",
+        "processing_confirmation",
+        "paid",
+        "failed",
+      ],
+      default: "PENDING",
+      index: true,
+    },
+    phonepeMerchantId: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    expiresAt: {
+      type: Date,
       required: false,
       index: true,
     },
-    razorpaySignature: {
+    amount: {
+      type: Number,
+      required: false,
+    },
+    currency: {
       type: String,
+      default: "INR",
+    },
+    cardInfo: {
+      type: Object,
       required: false,
     },
     // PhonePe payment fields for traceability + idempotency
@@ -101,6 +128,17 @@ const orderSchema = new mongoose.Schema(
       sparse: true,
       index: true,
     },
+    phonepeMerchantOrderId: {
+      type: String,
+      required: false,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    phonepeOrderId: {
+      type: String,
+      required: false,
+    },
     phonepeTransactionId: {
       type: String,
       required: false,
@@ -109,9 +147,23 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+    paymentResponse: {
+      type: Object,
+      required: false,
+      default: {},
+    },
+    verifiedAt: {
+      type: Date,
+      required: false,
+    },
+    failureReason: {
+      type: String,
+      required: false,
+      default: "",
+    },
     status: {
       type: String,
-      enum: ["Pending", "Processing", "Cancelled", "Delivered", "Cancel"], // Keeping Delivered and Cancel for backward compatibility if needed, but adding Cancelled
+      enum: ["Pending", "Processing", "Cancelled", "Delivered", "Cancel"],
       default: "Pending",
     },
     deliveryStatus: {

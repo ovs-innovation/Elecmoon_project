@@ -5,23 +5,10 @@ const OrderServices = {
     return requests.post("/order/add", body, headers);
   },
 
-  createPaymentIntent: async (body) => {
-    return requests.post("/order/create-payment-intent", body);
-  },
-
-  createOrderByRazorPay: async (body) => {
-    return requests.post("/order/create/razorpay", body);
-  },
-
-  // secure verify razorpay payment + create order
-  verifyRazorpayPaymentAndAddOrder: async (body) => {
-    return requests.post("/order/verify/razorpay", body);
-  },
-
-  // PhonePe integration methods
   createPhonePePayment: async (body) => {
     return requests.post("/order/create-phonepe-payment", body);
   },
+
   verifyPhonePePayment: async (body) => {
     return requests.post("/order/verify/phonepe", body);
   },
@@ -29,11 +16,11 @@ const OrderServices = {
   getOrderCustomer: async ({ page = 1, limit = 8 }) => {
     return requests.get(`/order?limit=${limit}&page=${page}`);
   },
+
   getOrderById: async (id, body) => {
     return requests.get(`/order/${id}`, body);
   },
 
-  //for sending email invoice to customer
   sendEmailInvoiceToCustomer: async (body) => {
     return requests.post("/order/customer/invoice", body);
   },

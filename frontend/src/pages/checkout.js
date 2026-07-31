@@ -48,11 +48,16 @@ const Checkout = () => {
 
   useEffect(() => {
     if (router.query.error) {
+      const code = router.query.error;
       const errorMsg =
         router.query.msg ||
-        (router.query.error === "payment_cancelled"
-          ? "Payment was cancelled."
-          : "Payment failed. Please try again.");
+        (code === "payment_cancelled"
+          ? "Payment was cancelled. You can retry checkout."
+          : code === "payment_pending"
+            ? "Payment is still processing. Check My Orders in a minute."
+            : code === "payment_failed"
+              ? "Payment failed. No order was confirmed — you can retry."
+              : "Payment could not be completed. Please try again.");
       toast.error(errorMsg);
     }
   }, [router.query.error, router.query.msg]);
@@ -195,9 +200,6 @@ const Checkout = () => {
 
   const grandTotal = currentTotal + deliveryCharges;
 
-  // Razorpay expects amount to be in rupees; backend multiplies by 100
-  const razorpayAmount = Math.round(grandTotal * 100) / 100;
-
   // Populate form if user info exists
   useEffect(() => {
     if (userInfo) {
@@ -208,31 +210,11 @@ const Checkout = () => {
     }
   }, [userInfo, setValue]);
 
-  const loadRazorpayScript = async () => {
-    return new Promise((resolve, reject) => {
-      if (typeof window === "undefined") {
-        return reject(new Error("Window is not available"));
-      }
-
-      const existing = document.getElementById("razorpay-checkout-js");
-      if (existing) return resolve(true);
-
-      const script = document.createElement("script");
-      script.id = "razorpay-checkout-js";
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.async = true;
-      script.onload = () => resolve(true);
-      script.onerror = () =>
-        reject(new Error("Failed to load Razorpay checkout script"));
-      document.body.appendChild(script);
-    });
-  };
-
   const placeOrder = async () => {
+    if (loading) return; // prevent duplicate clicks
     if (!shippingData) return;
     if (!orderItems || orderItems.length === 0) {
       toast.error("Cart is empty. Please select a product to checkout.");
-      setLoading(false);
       return;
     }
     try {
@@ -262,7 +244,6 @@ const Checkout = () => {
           sku: item.sku || "",
           barcode: item.barcode || "",
         })),
-
         subTotal: currentTotal,
         shippingOption: "Product Delivery",
         shippingCost: deliveryCharges,
@@ -271,95 +252,28 @@ const Checkout = () => {
       };
 
       if (paymentMethod === "PhonePe") {
-        const phonepeRes = await OrderServices.createPhonePePayment(orderPayloadBase);
+        const phonepeRes = await OrderServices.createPhonePePayment(
+          orderPayloadBase
+        );
         if (phonepeRes?.success && phonepeRes?.redirectUrl) {
-          toast.loading("Redirecting to PhonePe gateway...");
+          toast.loading("Redirecting to PhonePe… Please do not refresh.");
+          // Keep loading=true; page will navigate away
           window.location.href = phonepeRes.redirectUrl;
           return;
-        } else {
-          throw new Error(phonepeRes?.message || "Failed to initialize PhonePe payment");
         }
+        throw new Error(
+          phonepeRes?.message || "Failed to initialize PhonePe payment"
+        );
       }
 
       if (paymentMethod === "Cash") {
-        const orderData = {
+        const res = await OrderServices.addOrder({
           ...orderPayloadBase,
           paymentMethod: "Cash",
-        };
-
-        const res = await OrderServices.addOrder(orderData);
+        });
         toast.success("Order placed successfully!");
         if (!buyNowItem) emptyCart();
         router.push(`/user/thank-you?orderId=${res._id}`);
-        return;
-      }
-
-      if (paymentMethod === "Razorpay") {
-        const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-        if (!razorpayKeyId) {
-          throw new Error(
-            "Razorpay key id is not configured. Add NEXT_PUBLIC_RAZORPAY_KEY_ID to frontend .env."
-          );
-        }
-
-        const razorpayOrder = await OrderServices.createOrderByRazorPay({
-          cart: orderPayloadBase.cart,
-          shippingOption: orderPayloadBase.shippingOption,
-          discount: orderPayloadBase.discount,
-        });
-        await loadRazorpayScript();
-
-        const fullName = `${shippingData.firstName} ${shippingData.lastName}`.trim();
-
-        const options = {
-          key: razorpayKeyId,
-          amount:
-            razorpayOrder?.amount ?? Math.round(grandTotal * 100),
-          currency: razorpayOrder?.currency ?? "INR",
-          name: "Elecmoon",
-          description: "Elecmoon Order Payment",
-          order_id: razorpayOrder?.id,
-          prefill: {
-            name: fullName,
-            email: shippingData.email,
-            contact: shippingData.phoneNumber,
-          },
-          handler: async function (response) {
-            try {
-              const verifyPayload = {
-                ...orderPayloadBase,
-                paymentMethod: "Razorpay",
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              };
-
-              const createdOrder =
-                await OrderServices.verifyRazorpayPaymentAndAddOrder(verifyPayload);
-
-              toast.success("Payment successful! Order placed.");
-              if (!buyNowItem) emptyCart();
-              router.push(`/user/thank-you?orderId=${createdOrder._id}`);
-            } catch (err) {
-              toast.error(err.response?.data?.message || err.message);
-            } finally {
-              setLoading(false);
-            }
-          },
-          theme: { color: "#0b1d3d" },
-          modal: {
-            ondismiss: function () {
-              setLoading(false);
-            },
-          },
-        };
-
-        const rzp = new window.Razorpay(options);
-        rzp.on("payment.failed", function (resp) {
-          toast.error(resp?.error?.description || "Payment failed. Please try again.");
-          setLoading(false);
-        });
-        rzp.open();
         return;
       }
 
@@ -784,9 +698,9 @@ const Checkout = () => {
                             </h3>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div
-                              onClick={() => setPaymentMethod("PhonePe")}
+                              onClick={() => !loading && setPaymentMethod("PhonePe")}
                               className={`p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between ${paymentMethod === "PhonePe"
                                   ? "border-purple-600 bg-purple-50/50 shadow-sm"
                                   : "border-gray-100 bg-white hover:border-gray-200"
@@ -809,7 +723,7 @@ const Checkout = () => {
                                       PhonePe
                                     </p>
                                     <span className="text-[9px] bg-purple-600 text-white font-extrabold px-1.5 py-0.5 rounded uppercase">
-                                      Fast
+                                      Secure
                                     </span>
                                   </div>
                                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
@@ -817,10 +731,11 @@ const Checkout = () => {
                                   </p>
                                 </div>
                               </div>
+                              <FiLock className="text-purple-400" />
                             </div>
 
                             <div
-                              onClick={() => setPaymentMethod("Cash")}
+                              onClick={() => !loading && setPaymentMethod("Cash")}
                               className={`p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between ${paymentMethod === "Cash"
                                   ? "border-[#0b1d3d] bg-blue-50/50"
                                   : "border-gray-100 bg-white hover:border-gray-200"
@@ -846,36 +761,6 @@ const Checkout = () => {
                                   </p>
                                 </div>
                               </div>
-                            </div>
-
-                            <div
-                              onClick={() => setPaymentMethod("Razorpay")}
-                              className={`p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between opacity-70 ${paymentMethod === "Razorpay"
-                                  ? "border-[#0b1d3d] bg-blue-50/50 opacity-100"
-                                  : "border-gray-100 bg-white opacity-70 hover:opacity-100"
-                                }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "Razorpay"
-                                      ? "border-[#0b1d3d]"
-                                      : "border-gray-300"
-                                    }`}
-                                >
-                                  {paymentMethod === "Razorpay" && (
-                                    <div className="w-2.5 h-2.5 rounded-full bg-[#0b1d3d]" />
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-sm text-[#0b1d3d]">
-                                    Razorpay
-                                  </p>
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                                    Online Gateway
-                                  </p>
-                                </div>
-                              </div>
-                              <FiLock className="text-gray-400" />
                             </div>
                           </div>
 
