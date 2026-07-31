@@ -843,6 +843,6 @@ export const storeCustomization = {
     meta_keywords: "e-commerce, online store",
     meta_title:
       "Elecmoon - React Grocery & Organic Food Store e-commerce Template",
-    meta_url: "https://Elecmoon-store-nine.vercel.app/",
+    meta_url: "https://elecmoon.com/",
   },
 };

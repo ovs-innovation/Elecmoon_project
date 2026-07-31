@@ -17,7 +17,7 @@
         "header": [
           { "key": "Authorization", "value": "Bearer {{token}}" },
           { "key": "Content-Type", "value": "application/json" },
-          { "key": "Origin", "value": "https://elecmoon.vercel.app" }
+          { "key": "Origin", "value": "https://elecmoon.com" }
         ],
         "body": {
           "mode": "raw",

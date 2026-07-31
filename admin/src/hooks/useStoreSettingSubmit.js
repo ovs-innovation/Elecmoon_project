@@ -58,8 +58,10 @@ const useStoreSettingSubmit = (id) => {
           github_secret: data.github_secret,
           facebook_id: data.facebook_id,
           facebook_secret: data.facebook_secret,
-          // nextauth_secret: data.nextauth_secret,
-          // next_api_base_url: data.next_api_base_url,
+          next_api_base_url:
+            data.next_api_base_url || "https://api.elecmoon.com/api",
+          meta_url: data.meta_url || "https://elecmoon.com/",
+          website_url: data.website_url || "https://elecmoon.com/",
           google_analytic_status: enabledGoogleAnalytics,
           google_analytic_key: data.google_analytic_key,
           fb_pixel_status: enabledFbPixel,
@@ -120,8 +122,12 @@ const useStoreSettingSubmit = (id) => {
           setValue("github_secret", res.github_secret);
           setValue("facebook_id", res.facebook_id);
           setValue("facebook_secret", res.facebook_secret);
-          // setValue("nextauth_secret", res.nextauth_secret);
-          // setValue("next_api_base_url", res.next_api_base_url);
+          setValue(
+            "next_api_base_url",
+            res.next_api_base_url || "https://api.elecmoon.com/api"
+          );
+          setValue("meta_url", res.meta_url || "https://elecmoon.com/");
+          setValue("website_url", res.website_url || "https://elecmoon.com/");
           setValue("google_analytic_key", res.google_analytic_key);
           setValue("fb_pixel_key", res.fb_pixel_key);
           setValue("tawk_chat_property_id", res.tawk_chat_property_id);

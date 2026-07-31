@@ -282,7 +282,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
     const shareData = {
       title: showingTranslateValue(selectVariant?.title) || showingTranslateValue(product?.title),
       text: showingTranslateValue(selectVariant?.description) || showingTranslateValue(product?.description),
-      url: `https://Elecmoon-store-nine.vercel.app/product/${selectVariant?.slug || router.query.slug}`,
+      url: `https://elecmoon.com/product/${selectVariant?.slug || router.query.slug}`,
     };
 
     if (navigator.share) {
@@ -859,7 +859,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                             <ul className="flex mt-4">
                               <li className="flex items-center text-center border border-gray-100 rounded-full hover:bg-red-500  mr-2 transition ease-in-out duration-500">
                                 <FacebookShareButton
-                                  url={`https://Elecmoon-store-nine.vercel.app/product/${selectVariant?.slug || router.query.slug
+                                  url={`https://elecmoon.com/product/${selectVariant?.slug || router.query.slug
                                     }`}
                                   quote=""
                                 >
@@ -868,7 +868,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                               </li>
                               <li className="flex items-center text-center border border-gray-100 rounded-full hover:bg-red-500  mr-2 transition ease-in-out duration-500">
                                 <TwitterShareButton
-                                  url={`https://Elecmoon-store-nine.vercel.app/product/${selectVariant?.slug || router.query.slug
+                                  url={`https://elecmoon.com/product/${selectVariant?.slug || router.query.slug
                                     }`}
                                   quote=""
                                 >
@@ -877,7 +877,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                               </li>
                               <li className="flex items-center text-center border border-gray-100 rounded-full   mr-2 transition ease-in-out duration-500">
                                 <a
-                                  href={`https://www.instagram.com/?url=https://Elecmoon-store-nine.vercel.app/product/${selectVariant?.slug || router.query.slug
+                                  href={`https://www.instagram.com/?url=https://elecmoon.com/product/${selectVariant?.slug || router.query.slug
                                     }`}
                                   target="_blank"
                                   rel="noopener noreferrer"
@@ -892,7 +892,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                               </li>
                               <li className="flex items-center text-center border border-gray-100 rounded-full hover:bg-red-500  mr-2 transition ease-in-out duration-500">
                                 <WhatsappShareButton
-                                  url={`https://Elecmoon-store-nine.vercel.app/product/${selectVariant?.slug || router.query.slug
+                                  url={`https://elecmoon.com/product/${selectVariant?.slug || router.query.slug
                                     }`}
                                   quote=""
                                 >
@@ -901,7 +901,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                               </li>
                               <li className="flex items-center text-center border border-gray-100 rounded-full hover:bg-red-500  mr-2 transition ease-in-out duration-500">
                                 <LinkedinShareButton
-                                  url={`https://Elecmoon-store-nine.vercel.app/product/${selectVariant?.slug || router.query.slug
+                                  url={`https://elecmoon.com/product/${selectVariant?.slug || router.query.slug
                                     }`}
                                   quote=""
                                 >

@@ -39,6 +39,17 @@ const connectDB = async () => {
     console.log(
       `MongoDB connected | db: ${mongoose.connection.db.databaseName} | host: ${mongoose.connection.host}`
     );
+
+    // Idempotent URL migration (localhost / PowerQ / vercel → production)
+    try {
+      const {
+        migrateStoreSettingUrls,
+      } = require("../script/migrate_store_setting_urls");
+      await migrateStoreSettingUrls();
+    } catch (migErr) {
+      console.error("[Migration] store setting URL migrate failed:", migErr.message);
+    }
+
     return cachedDb;
   } catch (err) {
     console.error("MongoDB connection failed:", err.message);

@@ -120,12 +120,21 @@ const updateStoreSetting = async (req, res) => {
       acc[`setting.${key}`] = setting[key];
       return acc;
     }, {});
-    // Update the online store setting document
+    // Update the canonical storeSetting document (GET /store-setting/all)
     const storeSetting = await Setting.findOneAndUpdate(
       { name: "storeSetting" },
       { $set: updateFields },
-      { new: true, upsert: true } // upsert to create the document if it doesn't exist
+      { new: true, upsert: true }
     );
+
+    // Keep SEO meta_url in sync on storeCustomizationSetting when provided
+    if (setting.meta_url) {
+      await Setting.findOneAndUpdate(
+        { name: "storeCustomizationSetting" },
+        { $set: { "setting.seo.meta_url": setting.meta_url } },
+        { upsert: false }
+      );
+    }
 
     res.send({
       data: storeSetting,
@@ -221,8 +230,17 @@ const updateStoreCustomizationSetting = async (req, res) => {
     const storeCustomizationSetting = await Setting.findOneAndUpdate(
       { name: "storeCustomizationSetting" },
       { $set: updateFields },
-      { new: true, upsert: true } // upsert to create the document if it doesn't exist
+      { new: true, upsert: true }
     );
+
+    // Keep canonical storeSetting.meta_url in sync when SEO is saved
+    const seoMetaUrl = setting?.seo?.meta_url;
+    if (seoMetaUrl) {
+      await Setting.findOneAndUpdate(
+        { name: "storeSetting" },
+        { $set: { "setting.meta_url": seoMetaUrl, "setting.website_url": seoMetaUrl } }
+      );
+    }
 
     res.send({
       data: storeCustomizationSetting,

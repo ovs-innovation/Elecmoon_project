@@ -9,7 +9,7 @@ const setting = [
       "post_code": "2030",
       "contact": "019579034",
       "email": "Elecmoon@gmail.com",
-      "website": "Elecmoon-admin.vercel.app",
+      "website": "https://admin.elecmoon.com",
       "default_currency": "₹",
       "default_time_zone": "Europe/London",
       "default_date_format": "MMM D, YYYY",
@@ -595,7 +595,7 @@ const setting = [
         "meta_img": "https://res.cloudinary.com/ahossain/image/upload/v1636729752/facebook-page_j7alju.png",
         "meta_keywords": "e-commerce, online store",
         "meta_title": "Elecmoon - React Grocery & Organic Food Store e-commerce Template",
-        "meta_url": "https://Elecmoon-store-nine.vercel.app/"
+        "meta_url": "https://elecmoon.com/"
       },
       "term_and_condition": {
         "status": true,
@@ -639,14 +639,14 @@ const setting = [
       "facebook_id": "",
       "facebook_secret": "",
       "nextauth_secret": "",
-      "next_api_base_url": "http://localhost:5055/api",
+      "next_api_base_url": "https://api.elecmoon.com/api",
       "stripe_key": "pk_test_51PusFzLS2pVM8hd8U91RQOthxJKvwWCJxpmSM16xMttqMunxuvLifzEMhQnxEpr5yyBJWPXCqKtFtsatmEtuOTIv00MaPS2TpA",
       "stripe_secret": "sk_test_51PusFzLS2pVM8hd8p1OUp7oAbMsHy5xtQ8hDJ426DOUbGWCO7kGC6NCfZYtDFQj87rrEali0Bd5YKK502c1aKffu004s0jelJI",
       "stripe_status": true,
       "razorpay_status": false,
       "razorpay_id": "",
       "razorpay_secret": "",
-      "meta_url": "https://Elecmoon-store-nine.vercel.app/",
+      "meta_url": "https://elecmoon.com/",
       "tawk_chat_property_id": "",
       "tawk_chat_status": false,
       "tawk_chat_widget_id": ""
