@@ -20,11 +20,33 @@ class PhonePeService {
     const clientId = process.env.PHONEPE_CLIENT_ID;
     const clientSecret = process.env.PHONEPE_CLIENT_SECRET;
     const clientVersion = process.env.PHONEPE_CLIENT_VERSION || "1";
-    const merchantId = process.env.PHONEPE_MERCHANT_ID;
+    // Must match status.merchantId from PhonePe (often looks like M228BKUPOJQVQ).
+    // Do NOT confuse with Client ID (SU…). Salt keys are V1-only and unused here.
+    const merchantId = String(process.env.PHONEPE_MERCHANT_ID || "").trim();
 
     if (!clientId || !clientSecret) {
       throw new Error(
         "PhonePe credentials missing. Set PHONEPE_CLIENT_ID and PHONEPE_CLIENT_SECRET."
+      );
+    }
+
+    if (process.env.PHONEPE_SALT_KEY || process.env.PHONEPE_SALT_INDEX) {
+      console.warn(
+        "[PhonePe] PHONEPE_SALT_KEY/SALT_INDEX are set but ignored — PG V2 uses OAuth, not salt checksums."
+      );
+    }
+
+    if (isSandbox && (process.env.PHONEPE_AUTH_URL || "").includes("api.phonepe.com/apis/identity-manager")) {
+      throw new Error(
+        "PhonePe config mix: PHONEPE_ENV=sandbox but AUTH_URL points to production."
+      );
+    }
+    if (
+      !isSandbox &&
+      (process.env.PHONEPE_PG_URL || "").includes("pg-sandbox")
+    ) {
+      throw new Error(
+        "PhonePe config mix: PHONEPE_ENV=production but PG_URL points to sandbox."
       );
     }
 
@@ -51,6 +73,24 @@ class PhonePeService {
       webhookUsername: process.env.PHONEPE_WEBHOOK_USERNAME || "",
       webhookPassword: process.env.PHONEPE_WEBHOOK_PASSWORD || "",
     };
+  }
+
+  /** Masked runtime dump for ops/debug */
+  logRuntimeConfig() {
+    const cfg = this.getConfig();
+    const mask = (v) =>
+      !v ? "(empty)" : `${String(v).slice(0, 6)}…${String(v).slice(-4)}`;
+    console.log("[PhonePe][Config]", {
+      env: cfg.env,
+      merchantId: cfg.merchantId || "(empty)",
+      clientId: cfg.clientId,
+      clientVersion: cfg.clientVersion,
+      clientSecret: mask(cfg.clientSecret),
+      authBaseUrl: cfg.authBaseUrl,
+      pgBaseUrl: cfg.pgBaseUrl,
+      saltKeySet: Boolean(process.env.PHONEPE_SALT_KEY),
+      mockMode: process.env.PHONEPE_MOCK_MODE === "true",
+    });
   }
 
   async getAccessToken() {

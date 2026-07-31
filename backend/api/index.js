@@ -114,6 +114,13 @@ const PORT = process.env.PORT || 5058;
 
 connectDB()
   .then(() => {
+    try {
+      const PhonePeService = require("../services/payment/PhonePeService");
+      PhonePeService.logRuntimeConfig();
+    } catch (err) {
+      console.warn("[PhonePe] config log skipped:", err.message);
+    }
+
     app.listen(PORT, () => console.log(`server running on port ${PORT}`));
 
     // Local / long-running process: expire unpaid PhonePe pendings every 5 min.

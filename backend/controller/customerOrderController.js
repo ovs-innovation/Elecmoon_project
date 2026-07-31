@@ -17,6 +17,32 @@ const PaymentWebhookService = require("../services/payment/PaymentWebhookService
 const PaymentCallbackService = require("../services/payment/PaymentCallbackService");
 const PendingOrderExpiryService = require("../services/payment/PendingOrderExpiryService");
 const OrderService = require("../services/order/OrderService");
+const PhonePeService = require("../services/payment/PhonePeService");
+
+/** Masked PhonePe runtime config — used to verify production env after deploy */
+const phonePeHealth = async (_req, res) => {
+  try {
+    const cfg = PhonePeService.getConfig();
+    const mask = (v) =>
+      !v ? "(empty)" : `${String(v).slice(0, 4)}…${String(v).slice(-4)}`;
+    return res.status(200).send({
+      ok: true,
+      env: cfg.env,
+      merchantId: cfg.merchantId || "(empty)",
+      clientId: cfg.clientId,
+      clientVersion: cfg.clientVersion,
+      clientSecret: mask(cfg.clientSecret),
+      authBaseUrl: cfg.authBaseUrl,
+      pgBaseUrl: cfg.pgBaseUrl,
+      publicApiUrl: process.env.PUBLIC_API_URL || "(unset)",
+      storeUrl: process.env.STORE_URL || "(unset)",
+      mockMode: process.env.PHONEPE_MOCK_MODE === "true",
+      saltKeySet: Boolean(process.env.PHONEPE_SALT_KEY),
+    });
+  } catch (err) {
+    return res.status(500).send({ ok: false, message: err.message });
+  }
+};
 
 /** COD */
 const addOrder = async (req, res) => {
@@ -421,4 +447,5 @@ module.exports = {
   verifyPhonePePayment,
   phonePeMockCheckout,
   expirePendingPayments,
+  phonePeHealth,
 };

@@ -56,11 +56,12 @@ const tokenForVerify = (user) => {
 const isAuth = async (req, res, next) => {
   const { authorization } = req.headers;
 
-  // PhonePe browser callback, S2S webhook, mock checkout, and expiry cron are public.
+  // PhonePe browser callback, S2S webhook, mock checkout, health, and expiry cron are public.
   const isPublicOrderRoute =
     req.path.includes("/phonepe/callback") ||
     req.path.includes("/phonepe/webhook") ||
     req.path.includes("/phonepe/mock-checkout") ||
+    req.path.includes("/phonepe/health") ||
     req.path.includes("/payments/expire-pending");
 
   if (!authorization || !authorization.startsWith("Bearer ")) {

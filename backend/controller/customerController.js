@@ -1,6 +1,7 @@
 require("dotenv").config();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const Customer = require("../models/Customer");
 const LoginOtp = require("../models/LoginOtp");
 const SignupOtp = require("../models/SignupOtp");

@@ -101,7 +101,14 @@ class OrderService {
     const claimed = await Order.findOneAndUpdate(
       {
         phonepeMerchantOrderId: merchantOrderId,
-        paymentStatus: PaymentStatus.PENDING,
+        paymentStatus: {
+          $in: [
+            PaymentStatus.PENDING,
+            // Allow recovery when a prior bug marked FAILED but PhonePe is COMPLETED
+            PaymentStatus.FAILED,
+            PaymentStatus.CANCELLED,
+          ],
+        },
       },
       { $set: { paymentStatus: PaymentStatus.PROCESSING } },
       { new: true }
@@ -139,19 +146,43 @@ class OrderService {
       throw new Error("Only INR payments are accepted");
     }
 
-    // Merchant validation
-    const configuredMerchant = process.env.PHONEPE_MERCHANT_ID || "";
+    // Merchant validation (advisory + O/0 tolerant).
+    // V2 identity is already proven by OAuth Status API for this merchantOrderId.
+    // Dashboard fonts often make digit 0 and letter O look identical — fold them for compare.
+    const configuredMerchant = String(
+      process.env.PHONEPE_MERCHANT_ID || ""
+    ).trim();
+    const remoteMerchant = String(verifiedMerchantId || "").trim();
+    const foldMid = (id) =>
+      String(id || "")
+        .trim()
+        .toUpperCase()
+        .replace(/O/g, "0");
     if (
-      verifiedMerchantId &&
+      remoteMerchant &&
       configuredMerchant &&
-      String(verifiedMerchantId) !== String(configuredMerchant)
+      remoteMerchant !== configuredMerchant &&
+      foldMid(remoteMerchant) !== foldMid(configuredMerchant)
     ) {
+      const detail = `Merchant mismatch: PhonePe returned "${remoteMerchant}", env PHONEPE_MERCHANT_ID is "${configuredMerchant}"`;
+      console.error("[Payment][Merchant]", detail);
       await Order.findByIdAndUpdate(claimed._id, {
         paymentStatus: PaymentStatus.FAILED,
         status: "Cancelled",
-        failureReason: `Merchant mismatch: ${verifiedMerchantId}`,
+        failureReason: detail,
       });
       throw new Error("Merchant ID mismatch — payment rejected");
+    }
+    if (
+      remoteMerchant &&
+      configuredMerchant &&
+      remoteMerchant !== configuredMerchant &&
+      foldMid(remoteMerchant) === foldMid(configuredMerchant)
+    ) {
+      console.warn(
+        "[Payment][Merchant] O/0 glyph mismatch tolerated:",
+        { remoteMerchant, configuredMerchant }
+      );
     }
 
     if (

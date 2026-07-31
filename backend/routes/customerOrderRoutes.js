@@ -11,6 +11,7 @@ const {
   verifyPhonePePayment,
   phonePeMockCheckout,
   expirePendingPayments,
+  phonePeHealth,
 } = require("../controller/customerOrderController");
 
 const { emailVerificationLimit } = require("../lib/email-sender/sender");
@@ -22,6 +23,7 @@ router.all("/phonepe/callback", phonePeCallback);
 router.post("/phonepe/webhook", phonePeWebhook);
 router.post("/verify/phonepe", verifyPhonePePayment);
 router.all("/phonepe/mock-checkout", phonePeMockCheckout);
+router.get("/phonepe/health", phonePeHealth);
 
 // Scheduled cleanup (Vercel Cron / external scheduler)
 router.all("/payments/expire-pending", expirePendingPayments);
