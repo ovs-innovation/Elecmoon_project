@@ -170,7 +170,7 @@ const CategoryDrawer = ({ id, data }) => {
                       setIsParentCategory(value);
                       if (value) {
                         setChecked("");
-                        setSelectCategoryName("Home");
+                        setSelectCategoryName("");
                       }
                     }}
                     processOption={isParentCategory}
@@ -201,7 +201,7 @@ const CategoryDrawer = ({ id, data }) => {
                       required: false,
                     })}
                     name="parent"
-                    value={selectCategoryName ? selectCategoryName : "Home"}
+                    value={selectCategoryName && selectCategoryName !== "Home" ? selectCategoryName : ""}
                     placeholder={t("ParentCategory")}
                     type="text"
                   />

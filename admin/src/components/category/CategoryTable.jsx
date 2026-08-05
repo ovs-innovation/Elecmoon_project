@@ -1,7 +1,6 @@
-import { Avatar, TableBody, TableCell, TableRow } from "@windmill/react-ui";
+import { Avatar, TableBody, TableCell, TableRow, Badge } from "@windmill/react-ui";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { IoRemoveSharp } from "react-icons/io5";
 
 //internal import
 
@@ -82,35 +81,27 @@ const CategoryTable = ({
             </TableCell>
 
             <TableCell className="font-medium text-sm min-w-[180px]">
-              <div
-                className="flex items-start gap-1"
-                style={{ paddingLeft: `${(category._depth || 0) * 16}px` }}
-              >
-                {(category._depth || 0) > 0 ? (
-                  <IoRemoveSharp className="text-gray-400 mt-0.5 flex-shrink-0" />
-                ) : null}
-                {category?.children?.length > 0 && !showChild ? (
-                  <Link
-                    to={`/categories/${category?._id}`}
-                    className="text-blue-700 hover:underline"
-                  >
-                    {showingTranslateValue(category?.name)}
-                  </Link>
-                ) : (
-                  <span>{showingTranslateValue(category?.name)}</span>
-                )}
-              </div>
-              {showChild && category?.children?.length > 0 ? (
-                <p className="text-[10px] text-gray-400 mt-1 pl-4">
-                  {category.children.length} sub-categor
-                  {category.children.length === 1 ? "y" : "ies"}
-                </p>
-              ) : null}
+              {category?.children?.length > 0 && !showChild ? (
+                <Link
+                  to={`/categories/${category?._id}`}
+                  className="text-blue-700 hover:underline"
+                >
+                  {showingTranslateValue(category?.name)}
+                </Link>
+              ) : (
+                <span>{showingTranslateValue(category?.name)}</span>
+              )}
             </TableCell>
-            <TableCell className="text-xs text-gray-500 max-w-[140px]">
-              {category._parentLabel ||
-                category.parentName ||
-                (category.parentId ? "—" : "Top level")}
+            <TableCell className="text-xs max-w-[180px]">
+              {(() => {
+                const parentName = category._parentLabel || category.parentName || "Home";
+                const isRoot = !category.parentId || parentName === "Home" || parentName.toLowerCase() === "home";
+                return isRoot ? (
+                  <Badge type="success">Home</Badge>
+                ) : (
+                  <Badge type="neutral">{parentName}</Badge>
+                );
+              })()}
             </TableCell>
 
             <TableCell className="text-center">
