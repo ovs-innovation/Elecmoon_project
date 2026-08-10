@@ -126,7 +126,7 @@ const useCategorySubmit = (id, data) => {
       clearErrors("parentId");
       clearErrors("parentName");
       clearErrors("description");
-      setSelectCategoryName("Home");
+      setSelectCategoryName("");
       setIsParentCategory(true);
       setLanguage(lang);
       setValue("language", language);

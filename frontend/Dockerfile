@@ -1,7 +1,7 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -23,5 +23,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.js ./next.config.js
+COPY --from=builder /app/i18n.json ./i18n.json
+COPY --from=builder /app/locales ./locales
 EXPOSE 3000
 CMD ["npm", "start"]

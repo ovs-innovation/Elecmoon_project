@@ -40,7 +40,7 @@ services:
     env_file:
       - ./frontend/.env
     ports:
-      - "3000:3000"
+      - "5051:5051"
     depends_on:
       - backend
 

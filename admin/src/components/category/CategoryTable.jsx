@@ -1,7 +1,6 @@
-import { Avatar, TableBody, TableCell, TableRow } from "@windmill/react-ui";
+import { Avatar, TableBody, TableCell, TableRow, Badge } from "@windmill/react-ui";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { IoRemoveSharp } from "react-icons/io5";
 
 //internal import
 
@@ -22,12 +21,14 @@ const CategoryIcon = ({ src, alt }) => {
   const showSrc = src && !failed ? src : PLACEHOLDER;
 
   return (
-    <Avatar
-      className="hidden mr-3 md:block bg-gray-50 p-1"
-      src={showSrc}
-      alt={alt || "category"}
-      onError={() => setFailed(true)}
-    />
+    <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center p-0.5 shadow-xs dark:border-gray-700 dark:bg-gray-800">
+      <img
+        className="w-full h-full object-contain rounded"
+        src={showSrc}
+        alt={alt || "category"}
+        onError={() => setFailed(true)}
+      />
+    </div>
   );
 };
 
@@ -63,7 +64,7 @@ const CategoryTable = ({
 
       <TableBody>
         {categories?.map((category) => (
-          <TableRow key={category._id}>
+          <TableRow key={category._id} className="hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition-colors">
             <TableCell>
               <CheckBox
                 type="checkbox"
@@ -74,43 +75,49 @@ const CategoryTable = ({
               />
             </TableCell>
 
-            <TableCell className="font-semibold uppercase text-xs">
-              {category?._id?.substring(20, 24)}
+            <TableCell>
+              <span className="font-mono text-[11px] font-semibold px-2 py-0.5 rounded bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border border-gray-200 dark:border-gray-700 uppercase">
+                {category?._id?.substring(20, 24)}
+              </span>
             </TableCell>
             <TableCell>
               <CategoryIcon src={category?.icon} alt={showingTranslateValue(category?.name)} />
             </TableCell>
 
             <TableCell className="font-medium text-sm min-w-[180px]">
-              <div
-                className="flex items-start gap-1"
-                style={{ paddingLeft: `${(category._depth || 0) * 16}px` }}
-              >
-                {(category._depth || 0) > 0 ? (
-                  <IoRemoveSharp className="text-gray-400 mt-0.5 flex-shrink-0" />
-                ) : null}
-                {category?.children?.length > 0 && !showChild ? (
-                  <Link
-                    to={`/categories/${category?._id}`}
-                    className="text-blue-700 hover:underline"
-                  >
-                    {showingTranslateValue(category?.name)}
-                  </Link>
-                ) : (
+              {category?.children?.length > 0 && !showChild ? (
+                <Link
+                  to={`/categories/${category?._id}`}
+                  className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 hover:underline transition-colors"
+                >
                   <span>{showingTranslateValue(category?.name)}</span>
-                )}
-              </div>
-              {showChild && category?.children?.length > 0 ? (
-                <p className="text-[10px] text-gray-400 mt-1 pl-4">
-                  {category.children.length} sub-categor
-                  {category.children.length === 1 ? "y" : "ies"}
-                </p>
-              ) : null}
+                  <span className="text-[10px] font-medium px-1.5 py-0.2 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 rounded-full border border-emerald-200/70 dark:border-emerald-700/50">
+                    {category?.children?.length}
+                  </span>
+                </Link>
+              ) : (
+                <span className="font-semibold text-gray-800 dark:text-gray-200">
+                  {showingTranslateValue(category?.name)}
+                </span>
+              )}
             </TableCell>
-            <TableCell className="text-xs text-gray-500 max-w-[140px]">
-              {category._parentLabel ||
-                category.parentName ||
-                (category.parentId ? "—" : "Top level")}
+
+            <TableCell className="text-xs max-w-[180px]">
+              {(() => {
+                const parentName = category._parentLabel || category.parentName || "Home";
+                const isRoot = !category.parentId || parentName === "Home" || parentName.toLowerCase() === "home";
+                return isRoot ? (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/50">
+                    <span className="w-1.5 h-1.5 mr-1.5 rounded-full bg-emerald-500"></span>
+                    Home
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 dark:bg-gray-700 dark:text-gray-200 border border-slate-200/80 dark:border-gray-600 max-w-[170px] truncate" title={parentName}>
+                    <span className="text-slate-400 dark:text-gray-400 mr-1 select-none">↳</span>
+                    {parentName}
+                  </span>
+                );
+              })()}
             </TableCell>
 
             <TableCell className="text-center">

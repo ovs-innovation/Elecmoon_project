@@ -36,7 +36,6 @@ import AnimatedContent from "@/components/common/AnimatedContent";
 import {
   getAdminRootCategories,
   flattenCategoryTree,
-  normalizeFlatCategories,
 } from "@/utils/categoryAdmin";
 
 const Category = () => {
@@ -58,13 +57,12 @@ const Category = () => {
 
   const categorySource = useMemo(() => {
     if (showChild) {
-      if (Array.isArray(getAllCategories) && getAllCategories.length > 0) {
-        return normalizeFlatCategories(getAllCategories);
-      }
+      // Always use tree data for display so _parentLabel is computed
+      // from the actual tree structure — not the stale stored parentName field.
       return flattenCategoryTree(data || []);
     }
     return getAdminRootCategories(data || []);
-  }, [data, getAllCategories, showChild]);
+  }, [data, showChild]);
 
   const {
     handleSubmitCategory,

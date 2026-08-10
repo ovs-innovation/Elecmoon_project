@@ -119,7 +119,7 @@ const CategoryDrawerItem = ({ title, icon, nested, id, slug }) => {
 
                     <div className="inline-flex items-center justify-between w-full">
                       <span className="truncate">
-                        {`for ${showingTranslateValue(children.name)}`}
+                        {showingTranslateValue(children.name)}
                       </span>
                       <span className="transition duration-300 ease-in-out inline-flex loading-none items-end text-gray-400 ml-2 flex-shrink-0">
                         {showSubCategory.id === children._id &&
@@ -146,7 +146,7 @@ const CategoryDrawerItem = ({ title, icon, nested, id, slug }) => {
                       <IoRemoveSharp />
                     </span>
                     <span className="truncate">
-                      {`for ${showingTranslateValue(children.name)}`}
+                      {showingTranslateValue(children.name)}
                     </span>
                   </a>
                 )}
@@ -172,7 +172,7 @@ const CategoryDrawerItem = ({ title, icon, nested, id, slug }) => {
                               <IoRemoveSharp />
                             </span>
                             <span className="truncate">
-                              {`for ${showingTranslateValue(subChildren?.name)}`}
+                              {showingTranslateValue(subChildren?.name)}
                             </span>
                           </a>
                         </li>
