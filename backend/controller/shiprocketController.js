@@ -1,162 +1,229 @@
-const axios = require('axios');
-const Order = require('../models/Order');
+const FulfillmentQueueService = require("../services/shipping/FulfillmentQueueService");
+const ShiprocketHealthMonitor = require("../services/monitoring/ShiprocketHealthMonitor");
+const ShiprocketService = require("../services/shipping/ShiprocketService");
+const ShipmentFulfillmentService = require("../services/shipping/ShipmentFulfillmentService");
+const ShippingJob = require("../models/ShippingJob");
 
-const getShiprocketToken = async () => {
+/**
+ * GET /api/orders/shipping/monitor
+ */
+const getShippingMonitor = async (req, res) => {
   try {
-    const response = await axios.post('https://apiv2.shiprocket.in/v1/external/auth/login', {
-      email:process.env.SHIPROCKET_EMAIL,
-      password:process.env.SHIPROCKET_PASSWORD
+    const [stats, recentJobs] = await Promise.all([
+      FulfillmentQueueService.getQueueStats(),
+      ShippingJob.find({})
+        .sort({ updatedAt: -1 })
+        .limit(30)
+        .select("order orderId source status attempts lastError nextAttemptAt updatedAt createdAt")
+        .lean(),
+    ]);
+
+    return res.status(200).send({
+      health: ShiprocketHealthMonitor.snapshot(),
+      configured: ShiprocketService.isConfigured(),
+      stats,
+      recentJobs,
     });
-    console.log("The data is : ",response.data);
-    return response.data.token;
-  } catch (error) {
-    console.error('Shiprocket Authentication Failed:', error.response?.data || error.message);
-    throw new Error('Failed to authenticate with Shiprocket');
+  } catch (err) {
+    return res.status(500).send({ message: err.message });
   }
 };
 
+/**
+ * GET /api/orders/shipping/failed
+ */
+const listFailedFulfillments = async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const orders = await FulfillmentQueueService.listFailedOrders({ limit });
+    return res.status(200).send({ count: orders.length, orders });
+  } catch (err) {
+    return res.status(500).send({ message: err.message });
+  }
+};
+
+/**
+ * POST /api/orders/shipping/failed/:id/retry
+ */
+const retryFailedFulfillment = async (req, res) => {
+  try {
+    const actor = req.user?.email || req.user?.name || "admin";
+    const job = await FulfillmentQueueService.retryFailedOrder(
+      req.params.id,
+      actor
+    );
+    // Also drain immediately for faster UX
+    FulfillmentQueueService.drain({ limit: 3 }).catch(() => null);
+    return res.status(200).send({
+      message: "Fulfillment re-queued",
+      job,
+    });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).send({ message: err.message });
+  }
+};
+
+/**
+ * GET /api/orders/shipping/dlq
+ */
+const listDeadLetters = async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const status = req.query.status || "open";
+    const items = await FulfillmentQueueService.listDlq({ limit, status });
+    return res.status(200).send({ count: items.length, items });
+  } catch (err) {
+    return res.status(500).send({ message: err.message });
+  }
+};
+
+/**
+ * POST /api/orders/shipping/dlq/:id/requeue
+ */
+const requeueDeadLetter = async (req, res) => {
+  try {
+    const actor = req.user?.email || req.user?.name || "admin";
+    const result = await FulfillmentQueueService.requeueDlq(
+      req.params.id,
+      actor
+    );
+    FulfillmentQueueService.drain({ limit: 3 }).catch(() => null);
+    return res.status(200).send({
+      message: "DLQ item re-queued",
+      ...result,
+    });
+  } catch (err) {
+    const status = err.status || 500;
+    return res.status(status).send({ message: err.message });
+  }
+};
+
+/**
+ * Admin create / resume — always resumeSteps so AWB/pickup can finish.
+ */
 const createShiprocketOrder = async (req, res) => {
   try {
     const { id } = req.params;
-    const order = await Order.findById(id);
+    const fulfilled = await ShipmentFulfillmentService.fulfillOrder(id, {
+      source: "admin",
+      resumeSteps: true,
+    });
 
-    if (!order) {
-      return res.status(404).send({ message: 'Order not found' });
-    }
-
-    if (order.shiprocketOrderId) {
-      return res.status(400).send({ message: 'Shiprocket order already created' });
-    }
-
-    const token = await getShiprocketToken();
-
-    const orderItems = order.cart.map(item => ({
-      name: item.title,
-      sku: item.sku || 'N/A',
-      units: item.quantity,
-      selling_price: item.price,
-      discount: item.discount || 0,
-      tax: item.tax || 0,
-      hsn: item.hsnCode || item.hsn || ''
-    }));
-
-    // Example payload based on Shiprocket specs
-    const shiprocketData = {
-      order_id: order.orderId || order._id,
-      order_date: new Date(order.createdAt).toISOString().split('T')[0],
-      pickup_location: process.env.SHIPROCKET_PICKUP_LOCATION || 'Primary',
-      billing_customer_name: order.user_info.name.split(' ')[0] || 'Customer',
-      billing_last_name: order.user_info.name.split(' ')[1] || '',
-      billing_address: order.user_info.address || 'N/A',
-      billing_address_2: '',
-      billing_city: order.user_info.city || 'N/A',
-      billing_pincode: order.user_info.zipCode || '000000',
-      billing_state: order.user_info.country || 'N/A',
-      billing_country: 'India', // Usually India for local Shiprocket
-      billing_email: order.user_info.email || 'customer@example.com',
-      billing_phone: order.user_info.contact || '0000000000',
-      shipping_is_billing: true,
-      order_items: orderItems,
-      payment_method: order.paymentMethod === 'Cash' || order.paymentMethod === 'COD' ? 'COD' : 'Prepaid',
-      shipping_charges: order.shippingCost || 0,
-      total_discount: order.discount || 0,
-      sub_total: order.subTotal || 0,
-      length: 10,
-      breadth: 15,
-      height: 20,
-      weight: 1 // Example fixed weight, in real scenario fetch from products
-    };
-
-    const response = await axios.post(
-      'https://apiv2.shiprocket.in/v1/external/orders/create/adhoc',
-      shiprocketData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      }
-    );
-   
-    if (response.data && response.data.order_id) {
-      // Save Shiprocket ID and details in your database
-      order.shiprocketOrderId = response.data.order_id;
-      order.shiprocketShipmentId = response.data.shipment_id;
-      order.shiprocketStatus = response.data.status;
-      order.deliveryStatus = "Shipped";
-      await order.save();
-
-      res.status(200).send({
-        message: 'Order created successfully on Shiprocket',
-        shiprocketData: response.data
+    if (fulfilled?.skipped) {
+      return res.status(200).send({
+        message: `Skipped: ${fulfilled.skipReason}`,
+        order: serializeShipment(fulfilled),
       });
-    } else {
-      res.status(400).send({ message: 'Failed to create Shiprocket order', data: response.data });
     }
+
+    return res.status(200).send({
+      message: "Shiprocket fulfillment completed",
+      order: serializeShipment(fulfilled),
+    });
   } catch (err) {
-    console.error('Create Shiprocket Error:', err.response?.data || err.message);
-    res.status(500).send({ message: err.message, errorDetails: err.response?.data });
+    ShiprocketService.log("Error", {
+      event: "admin_fulfill",
+      message: err.message,
+      data: err.data,
+    });
+    const status =
+      err.status && err.status >= 400 && err.status < 600 ? err.status : 500;
+    return res.status(status).send({
+      message: err.message,
+      errorDetails: err.data || undefined,
+    });
   }
 };
 
 const handleShiprocketWebhook = async (req, res) => {
   try {
-    const webhookSecret = process.env.SHIPROCKET_WEBHOOK_SECRET;
-    if (!webhookSecret) {
-      return res.status(503).send({ message: "Shiprocket webhook secret is not configured." });
-    }
-
     const providedSecret =
+      req.headers["x-api-key"] ||
       req.headers["x-shiprocket-token"] ||
       req.headers["x-webhook-secret"] ||
       req.body?.webhook_secret;
 
-    if (providedSecret !== webhookSecret) {
-      return res.status(401).send({ message: "Unauthorized webhook request." });
+    ShiprocketService.verifyWebhookSecret(providedSecret);
+
+    const result = await ShipmentFulfillmentService.applyWebhook(req.body || {});
+
+    if (result?.duplicate) {
+      return res.status(200).send({
+        message: "Duplicate webhook ignored",
+        duplicate: true,
+        orderId: result.orderId || result.order?.orderId,
+        deliveryStatus: result.deliveryStatus || result.order?.deliveryStatus,
+      });
     }
 
-    const { order_id, shipment_id, status } = req.body;
-    console.log('Shiprocket Webhook received:', { order_id, shipment_id, status });
-
-    // Look up by shipment_id or order_id
-    const order = await Order.findOne({
-      $or: [
-        { shiprocketShipmentId: shipment_id },
-        { shiprocketOrderId: order_id }
-      ]
+    return res.status(200).send({
+      message: "Webhook processed successfully",
+      orderId: result.orderId,
+      deliveryStatus: result.deliveryStatus,
     });
-
-    if (!order) {
-      return res.status(404).send({ message: 'Order not found for this shipment' });
-    }
-
-    // Update internal tracking status
-    order.shiprocketStatus = status;
-
-    // Map Shiprocket statuses to internal Delivery Status
-    const statusMap = {
-      'shipped': 'Shipped',
-      'in transit': 'In Transit',
-      'delivered': 'Delivered',
-      'canceled': 'Cancelled',
-      'returned': 'Returned'
-    };
-
-    const newDeliveryStatus = statusMap[status.toLowerCase()];
-    if (newDeliveryStatus) {
-      order.deliveryStatus = newDeliveryStatus;
-    }
-
-    await order.save();
-
-    res.status(200).send({ message: 'Webhook processed successfully' });
   } catch (err) {
-    console.error('Shiprocket Webhook Error:', err.message);
-    res.status(500).send({ message: err.message });
+    ShiprocketService.log("WebhookError", {
+      message: err.message,
+      status: err.status,
+    });
+    const status =
+      err.status && err.status >= 400 && err.status < 600 ? err.status : 500;
+    return res.status(status).send({ message: err.message });
   }
 };
 
+const getShipmentTracking = async (req, res) => {
+  try {
+    const Order = require("../models/Order");
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).send({ message: "Order not found" });
+    }
+
+    const isAdmin = req.user?.type === "admin" || req.user?.role === "admin";
+    if (!isAdmin && req.user?._id && String(order.user) !== String(req.user._id)) {
+      return res.status(403).send({
+        message: "You are not authorized to track this order.",
+      });
+    }
+
+    const tracking = await ShipmentFulfillmentService.getTrackingForOrder(order);
+    return res.status(200).send({
+      orderId: order.orderId,
+      ...tracking,
+    });
+  } catch (err) {
+    return res.status(500).send({ message: err.message });
+  }
+};
+
+function serializeShipment(order) {
+  return {
+    _id: order._id,
+    orderId: order.orderId,
+    shiprocketOrderId: order.shiprocketOrderId,
+    shiprocketShipmentId: order.shiprocketShipmentId,
+    shiprocketStatus: order.shiprocketStatus,
+    awbCode: order.awbCode,
+    courierName: order.courierName,
+    trackingUrl: order.trackingUrl,
+    deliveryStatus: order.deliveryStatus,
+    shiprocketPickupScheduled: order.shiprocketPickupScheduled,
+    shiprocketFulfillmentStatus: order.shiprocketFulfillmentStatus,
+    shiprocketFulfillmentError: order.shiprocketFulfillmentError,
+    skipped: order.skipped || false,
+    skipReason: order.skipReason || undefined,
+  };
+}
+
 module.exports = {
   createShiprocketOrder,
-  handleShiprocketWebhook
+  handleShiprocketWebhook,
+  getShipmentTracking,
+  getShippingMonitor,
+  listFailedFulfillments,
+  retryFailedFulfillment,
+  listDeadLetters,
+  requeueDeadLetter,
 };

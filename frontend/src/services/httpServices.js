@@ -1,4 +1,9 @@
 import axios from "axios";
+import {
+  handleSessionExpired,
+  isSessionExpiredError,
+  markAuthErrorHandled,
+} from "@lib/authSession";
 
 const instance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
@@ -9,8 +14,18 @@ const instance = axios.create({
   },
 });
 
+instance.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (isSessionExpiredError(error)) {
+      markAuthErrorHandled(error);
+      await handleSessionExpired();
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const setToken = (token) => {
-  // console.log("token", token);
   if (token) {
     instance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
   } else {

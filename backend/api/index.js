@@ -3,6 +3,10 @@ dns.setServers(["8.8.8.8", "1.1.1.1"])
 
 
 require("dotenv").config();
+
+const SentryService = require("../services/monitoring/SentryService");
+SentryService.init();
+
 const express = require("express");
 const helmet = require("helmet");
 const cors = require("cors");
@@ -29,6 +33,7 @@ const reviewRoutes = require("../routes/reviewRoutes");
 const batteryServiceRoutes = require("../routes/batteryServiceRoutes");
 const shortVideoRoutes = require("../routes/shortVideoRoutes");
 const { handleShiprocketWebhook } = require("../controller/shiprocketController");
+const { getHealth } = require("../controller/healthController");
 const { isAuth, isAdmin } = require("../config/auth")
 
 const app = express();
@@ -71,6 +76,9 @@ app.get("/", (req, res) => {
   res.send("App works properly!");
 });
 
+app.get("/api/health", getHealth);
+app.get("/health", getHealth);
+
 //this for route will need for store front, also for admin dashboard
 app.use("/api/products/", productRoutes);
 app.use("/api/category/", categoryRoutes);
@@ -98,6 +106,11 @@ app.use("/api/orders/", isAuth, isAdmin, orderRoutes);
 // Use express's default error handling middleware
 app.use((err, req, res, next) => {
   if (res.headersSent) return next(err);
+  try {
+    SentryService.captureException(err, { tags: { component: "express" } });
+  } catch (_) {
+    /* ignore */
+  }
   res.status(400).json({ message: err.message });
 });
 
@@ -134,9 +147,19 @@ connectDB()
         );
       }, FIVE_MIN);
       PendingOrderExpiryService.run().catch(() => null);
+
+      const FulfillmentQueueService = require("../services/shipping/FulfillmentQueueService");
+      FulfillmentQueueService.startWorker({
+        intervalMs: Number(process.env.SHIPROCKET_QUEUE_INTERVAL_MS) || 15_000,
+      });
     }
   })
   .catch((err) => {
     console.error("Failed to start server:", err.message);
+    try {
+      SentryService.captureException(err, { tags: { component: "startup" } });
+    } catch (_) {
+      /* ignore */
+    }
     process.exit(1);
   });

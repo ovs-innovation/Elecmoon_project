@@ -15,6 +15,9 @@ const {
 } = require("../controller/customerOrderController");
 
 const { emailVerificationLimit } = require("../lib/email-sender/sender");
+const {
+  getShipmentTracking,
+} = require("../controller/shiprocketController");
 
 router.post("/add", addOrder);
 
@@ -28,6 +31,7 @@ router.get("/phonepe/health", phonePeHealth);
 // Scheduled cleanup (Vercel Cron / external scheduler)
 router.all("/payments/expire-pending", expirePendingPayments);
 
+router.get("/:id/tracking", getShipmentTracking);
 router.get("/:id", getOrderById);
 router.get("/", getOrderCustomer);
 

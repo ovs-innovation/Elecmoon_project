@@ -1,9 +1,11 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { useCart } from "react-use-cart";
+import { useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import {
   FiCreditCard,
@@ -13,11 +15,13 @@ import {
   FiShoppingBag,
   FiLock,
   FiArrowLeft,
+  FiAlertCircle,
 } from "react-icons/fi";
 
 // internal import
 import Layout from "@layout/Layout";
 import OrderServices from "@services/OrderServices";
+import SettingServices from "@services/SettingServices";
 import { UserContext } from "@context/UserContext";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import {
@@ -25,12 +29,46 @@ import {
   syncCartQuantity,
   loadBuyNowPricing,
 } from "@utils/quantityPricing";
+import { appendRedirectUrl } from "@utils/authRedirect";
+import {
+  getFriendlyErrorMessage,
+  handleSessionExpired,
+  isJwtExpired,
+  wasAuthErrorHandled,
+} from "@lib/authSession";
 
 const Checkout = () => {
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession();
   const { items, emptyCart, updateItem } = useCart();
   const { state: { userInfo } } = useContext(UserContext);
   const { currency, getNumber } = useUtilsFunction();
+  const placingRef = useRef(false);
+
+  const { data: storeSetting } = useQuery({
+    queryKey: ["storeSetting"],
+    queryFn: async () => await SettingServices.getStoreSetting(),
+    staleTime: 30 * 1000,
+    refetchOnMount: "always",
+  });
+
+  const isCodEnabled = storeSetting?.cod_status !== false;
+
+  const sessionIssue = useMemo(() => {
+    if (sessionStatus === "loading") return null;
+    if (sessionStatus !== "authenticated" || !session?.user?.token) {
+      return "login";
+    }
+    if (isJwtExpired(session.user.token)) {
+      return "expired";
+    }
+    return null;
+  }, [session, sessionStatus]);
+
+  const loginHref = appendRedirectUrl(
+    "/auth/login",
+    router.asPath || "/checkout"
+  );
 
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("PhonePe");
@@ -61,6 +99,12 @@ const Checkout = () => {
       toast.error(errorMsg);
     }
   }, [router.query.error, router.query.msg]);
+
+  useEffect(() => {
+    if (!isCodEnabled && paymentMethod === "Cash") {
+      setPaymentMethod("PhonePe");
+    }
+  }, [isCodEnabled, paymentMethod]);
 
   const isBuyNowFlow = Boolean(
     buyNowItem ||
@@ -211,12 +255,20 @@ const Checkout = () => {
   }, [userInfo, setValue]);
 
   const placeOrder = async () => {
-    if (loading) return; // prevent duplicate clicks
+    if (loading || placingRef.current) return;
     if (!shippingData) return;
+
+    if (sessionIssue) {
+      await handleSessionExpired();
+      return;
+    }
+
     if (!orderItems || orderItems.length === 0) {
       toast.error("Cart is empty. Please select a product to checkout.");
       return;
     }
+
+    placingRef.current = true;
     try {
       setLoading(true);
 
@@ -267,6 +319,11 @@ const Checkout = () => {
       }
 
       if (paymentMethod === "Cash") {
+        if (!isCodEnabled) {
+          throw new Error(
+            "Cash on Delivery is currently unavailable. Please pay with PhonePe."
+          );
+        }
         const res = await OrderServices.addOrder({
           ...orderPayloadBase,
           paymentMethod: "Cash",
@@ -279,8 +336,19 @@ const Checkout = () => {
 
       throw new Error("Unsupported payment method selected.");
     } catch (err) {
-      toast.error(err.response?.data?.message || err.message);
+      if (wasAuthErrorHandled(err)) {
+        setLoading(false);
+        placingRef.current = false;
+        return;
+      }
+      toast.error(
+        getFriendlyErrorMessage(
+          err,
+          "Could not place your order. Please try again."
+        )
+      );
       setLoading(false);
+      placingRef.current = false;
     }
   };
 
@@ -698,7 +766,7 @@ const Checkout = () => {
                             </h3>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className={`grid grid-cols-1 ${isCodEnabled ? "sm:grid-cols-2" : ""} gap-4`}>
                             <div
                               onClick={() => !loading && setPaymentMethod("PhonePe")}
                               className={`p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between ${paymentMethod === "PhonePe"
@@ -734,37 +802,63 @@ const Checkout = () => {
                               <FiLock className="text-purple-400" />
                             </div>
 
-                            <div
-                              onClick={() => !loading && setPaymentMethod("Cash")}
-                              className={`p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between ${paymentMethod === "Cash"
-                                  ? "border-[#0b1d3d] bg-blue-50/50"
-                                  : "border-gray-100 bg-white hover:border-gray-200"
-                                }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "Cash"
-                                      ? "border-[#0b1d3d]"
-                                      : "border-gray-300"
-                                    }`}
-                                >
-                                  {paymentMethod === "Cash" && (
-                                    <div className="w-2.5 h-2.5 rounded-full bg-[#0b1d3d]" />
-                                  )}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-sm text-[#0b1d3d]">
-                                    Cash On Delivery
-                                  </p>
-                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
-                                    Pay when you receive
-                                  </p>
+                            {isCodEnabled && (
+                              <div
+                                onClick={() => !loading && setPaymentMethod("Cash")}
+                                className={`p-5 border-2 rounded-2xl cursor-pointer transition-all flex items-center justify-between ${paymentMethod === "Cash"
+                                    ? "border-[#0b1d3d] bg-blue-50/50"
+                                    : "border-gray-100 bg-white hover:border-gray-200"
+                                  }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div
+                                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === "Cash"
+                                        ? "border-[#0b1d3d]"
+                                        : "border-gray-300"
+                                      }`}
+                                  >
+                                    {paymentMethod === "Cash" && (
+                                      <div className="w-2.5 h-2.5 rounded-full bg-[#0b1d3d]" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-sm text-[#0b1d3d]">
+                                      Cash On Delivery
+                                    </p>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter">
+                                      Pay when you receive
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            )}
                           </div>
 
                           <div className="pt-2">
+                            {sessionIssue && (
+                              <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 flex gap-3">
+                                <FiAlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                  <p className="font-bold text-amber-900 text-sm">
+                                    {sessionIssue === "expired"
+                                      ? "Your session has expired"
+                                      : "Sign in required"}
+                                  </p>
+                                  <p className="text-xs text-amber-800 mt-1 leading-relaxed">
+                                    {sessionIssue === "expired"
+                                      ? "For your security, please sign in again to complete payment. Your cart is still saved."
+                                      : "Please sign in to place your order securely."}
+                                  </p>
+                                  <Link
+                                    href={loginHref}
+                                    className="inline-block mt-3 bg-[#0b1d3d] text-white text-xs font-bold uppercase tracking-wider px-4 py-2.5 rounded-lg hover:bg-[#162542] transition-colors"
+                                  >
+                                    Sign in to continue
+                                  </Link>
+                                </div>
+                              </div>
+                            )}
+
                             <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 flex items-start gap-4 mb-6">
                               <FiLock className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
                               <p className="text-[11px] text-blue-800 font-medium leading-relaxed">
@@ -774,7 +868,7 @@ const Checkout = () => {
 
                             <button
                               type="button"
-                              disabled={loading || !shippingData}
+                              disabled={loading || !shippingData || Boolean(sessionIssue)}
                               onClick={placeOrder}
                               className="w-full bg-[#0b1d3d] hover:bg-[#162542] text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm transition-all shadow-2xl active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3"
                             >

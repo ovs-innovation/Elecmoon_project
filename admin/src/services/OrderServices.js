@@ -98,6 +98,26 @@ const OrderServices = {
   createShiprocketOrder: async (id) => {
     return requests.post(`/orders/${id}/shiprocket`);
   },
+
+  getShippingMonitor: async () => {
+    return requests.get("/orders/shipping/monitor");
+  },
+
+  getFailedShipments: async () => {
+    return requests.get("/orders/shipping/failed");
+  },
+
+  retryFailedShipment: async (id) => {
+    return requests.post(`/orders/shipping/failed/${id}/retry`);
+  },
+
+  getShippingDlq: async () => {
+    return requests.get("/orders/shipping/dlq");
+  },
+
+  requeueShippingDlq: async (id) => {
+    return requests.post(`/orders/shipping/dlq/${id}/requeue`);
+  },
 };
 
 export default OrderServices;

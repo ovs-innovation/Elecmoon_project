@@ -1,6 +1,7 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { FiPhoneCall, FiChevronUp } from "react-icons/fi";
 
 //internal import
@@ -27,7 +28,20 @@ const Layout = ({ title, description, children }) => {
 
   return (
     <>
-      <ToastContainer />
+      <ToastContainer
+        position="top-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        limit={2}
+        theme="colored"
+        toastClassName="!rounded-xl !shadow-lg !font-medium"
+      />
       <RouteProgressBar />
 
       <div className="font-sans overflow-x-hidden">

@@ -168,19 +168,86 @@ const orderSchema = new mongoose.Schema(
     },
     deliveryStatus: {
       type: String,
-      enum: ["Shipped", "In Transit", "Delivered"],
+      enum: [
+        "Pending",
+        "Ready To Ship",
+        "Shipped",
+        "In Transit",
+        "Out For Delivery",
+        "Delivered",
+        "Cancelled",
+        "Returned",
+      ],
       required: false,
     },
     shiprocketOrderId: {
       type: String,
       required: false,
+      index: true,
     },
     shiprocketShipmentId: {
       type: String,
       required: false,
+      index: true,
     },
     shiprocketStatus: {
       type: String,
+      required: false,
+    },
+    awbCode: {
+      type: String,
+      required: false,
+      index: true,
+    },
+    courierName: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    trackingUrl: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    shiprocketPickupScheduled: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
+    shiprocketFulfillmentStatus: {
+      type: String,
+      enum: ["IDLE", "PROCESSING", "COMPLETED", "FAILED"],
+      required: false,
+      default: "IDLE",
+    },
+    shiprocketFulfillmentError: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    shiprocketLastWebhookAt: {
+      type: Date,
+      required: false,
+    },
+    shiprocketLastWebhookKey: {
+      type: String,
+      required: false,
+      default: "",
+    },
+    shiprocketFulfillmentLockAt: {
+      type: Date,
+      required: false,
+    },
+    shiprocketCreateClaimedAt: {
+      type: Date,
+      required: false,
+    },
+    shiprocketAwbClaimedAt: {
+      type: Date,
+      required: false,
+    },
+    shiprocketPickupClaimedAt: {
+      type: Date,
       required: false,
     },
   },
@@ -189,6 +256,8 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
+orderSchema.index({ shiprocketFulfillmentStatus: 1, updatedAt: -1 });
+
 const Order = mongoose.model(
   "Order",
   orderSchema.plugin(AutoIncrement, {
@@ -196,4 +265,5 @@ const Order = mongoose.model(
     start_seq: 10000,
   })
 );
+
 module.exports = Order;

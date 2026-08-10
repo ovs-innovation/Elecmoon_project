@@ -8,6 +8,7 @@ const {
 } = require("../../lib/email-sender/adminNotificationEmail");
 const InventoryService = require("../inventory/InventoryService");
 const { PaymentStatus } = require("../payment/PaymentStatus");
+const ShipmentFulfillmentService = require("../shipping/ShipmentFulfillmentService");
 
 const generateOrderId = () =>
   "ORD-" + crypto.randomBytes(4).toString("hex").toUpperCase();
@@ -72,6 +73,10 @@ class OrderService {
     queueOrderNotificationEmail(order);
 
     this.log("COD Created", { orderId: order.orderId });
+
+    // Non-blocking Shiprocket fulfillment (create → AWB → pickup)
+    ShipmentFulfillmentService.queueFulfillment(order._id, "cod");
+
     return order;
   }
 
@@ -95,6 +100,14 @@ class OrderService {
     });
     if (alreadyPaid) {
       this.log("Already Paid — ignore duplicate", { merchantOrderId });
+      // Safe to re-queue only when create has not run yet, or AWB/pickup incomplete
+      const needsShipping =
+        !alreadyPaid.shiprocketShipmentId ||
+        !alreadyPaid.awbCode ||
+        !alreadyPaid.shiprocketPickupScheduled;
+      if (needsShipping) {
+        ShipmentFulfillmentService.queueFulfillment(alreadyPaid._id, "paid-retry");
+      }
       return alreadyPaid;
     }
 
@@ -120,6 +133,13 @@ class OrderService {
       });
       if (existing?.paymentStatus === PaymentStatus.PAID) {
         this.log("Already Paid — ignore duplicate", { merchantOrderId });
+        const needsShipping =
+          !existing.shiprocketShipmentId ||
+          !existing.awbCode ||
+          !existing.shiprocketPickupScheduled;
+        if (needsShipping) {
+          ShipmentFulfillmentService.queueFulfillment(existing._id, "paid-retry");
+        }
         return existing;
       }
       if (
@@ -237,6 +257,9 @@ class OrderService {
 
     queueOrderNotificationEmail(claimed);
     this.log("Email Sent", { orderId: claimed.orderId });
+
+    // Non-blocking Shiprocket fulfillment after verified PAID
+    ShipmentFulfillmentService.queueFulfillment(claimed._id, "paid");
 
     return claimed;
   }

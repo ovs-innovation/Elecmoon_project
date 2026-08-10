@@ -169,6 +169,28 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: false,
     },
+
+    /** Package dimensions for Shiprocket (cm / kg). Optional — env defaults used if missing. */
+    length: {
+      type: Number,
+      required: false,
+      min: 0,
+    },
+    breadth: {
+      type: Number,
+      required: false,
+      min: 0,
+    },
+    height: {
+      type: Number,
+      required: false,
+      min: 0,
+    },
+    weight: {
+      type: Number,
+      required: false,
+      min: 0,
+    },
   },
   {
     timestamps: true,

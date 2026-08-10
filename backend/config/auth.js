@@ -84,6 +84,16 @@ const isAuth = async (req, res, next) => {
       req.user = null;
       return next();
     }
+    if (err.name === "TokenExpiredError") {
+      return res.status(401).send({
+        message: "Your session has expired. Please sign in again.",
+      });
+    }
+    if (err.name === "JsonWebTokenError") {
+      return res.status(401).send({
+        message: "Invalid session. Please sign in again.",
+      });
+    }
     res.status(401).send({
       message: err.message,
     });

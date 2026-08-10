@@ -18,6 +18,7 @@ const PaymentCallbackService = require("../services/payment/PaymentCallbackServi
 const PendingOrderExpiryService = require("../services/payment/PendingOrderExpiryService");
 const OrderService = require("../services/order/OrderService");
 const PhonePeService = require("../services/payment/PhonePeService");
+const Setting = require("../models/Setting");
 
 /** Masked PhonePe runtime config — used to verify production env after deploy */
 const phonePeHealth = async (_req, res) => {
@@ -49,6 +50,14 @@ const addOrder = async (req, res) => {
   try {
     if (!req.user?._id) {
       return res.status(401).send({ message: "Authentication required." });
+    }
+
+    const storeSetting = await Setting.findOne({ name: "storeSetting" }).lean();
+    if (storeSetting?.setting?.cod_status === false) {
+      return res.status(403).send({
+        message:
+          "Cash on Delivery is currently unavailable. Please pay online with PhonePe.",
+      });
     }
 
     const { cart, user_info, shippingOption, couponCode, discount } =

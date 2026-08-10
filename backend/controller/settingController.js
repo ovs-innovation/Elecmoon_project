@@ -69,9 +69,22 @@ const updateGlobalSetting = async (req, res) => {
 //store setting controller
 const addStoreSetting = async (req, res) => {
   try {
-    const newStoreSetting = new Setting(req.body);
-    await newStoreSetting.save();
+    // Never create a second storeSetting doc — merge into the existing one
+    const setting = req.body?.setting || {};
+    const updateFields = buildSafeStoreSettingUpdate(setting);
+    const storeSetting = await Setting.findOneAndUpdate(
+      { name: "storeSetting" },
+      {
+        $set: {
+          name: "storeSetting",
+          ...updateFields,
+        },
+        $setOnInsert: { createdAt: new Date() },
+      },
+      { new: true, upsert: true }
+    );
     res.send({
+      data: storeSetting,
       message: "Store Setting Added Successfully!",
     });
   } catch (err) {
@@ -95,6 +108,41 @@ const sanitizePublicStoreSetting = (setting = {}) => {
   return safeSetting;
 };
 
+/** Secrets/keys that must never be wiped by an empty form field */
+const STORE_SETTING_PRESERVE_IF_EMPTY = new Set([
+  "stripe_key",
+  "stripe_secret",
+  "razorpay_id",
+  "razorpay_secret",
+  "google_id",
+  "google_secret",
+  "github_id",
+  "github_secret",
+  "facebook_id",
+  "facebook_secret",
+  "nextauth_secret",
+  "google_analytic_key",
+  "fb_pixel_key",
+  "tawk_chat_property_id",
+  "tawk_chat_widget_id",
+]);
+
+const buildSafeStoreSettingUpdate = (setting = {}) => {
+  const updateFields = {};
+  for (const [key, value] of Object.entries(setting)) {
+    if (value === undefined || value === null) continue;
+    if (
+      STORE_SETTING_PRESERVE_IF_EMPTY.has(key) &&
+      String(value).trim() === ""
+    ) {
+      // Keep existing DB value — public GET strips secrets, so empty would wipe them
+      continue;
+    }
+    updateFields[`setting.${key}`] = value;
+  }
+  return updateFields;
+};
+
 const getStoreSetting = async (req, res) => {
   try {
     const storeSetting = await Setting.findOne({ name: "storeSetting" });
@@ -114,13 +162,16 @@ const getStoreSetting = async (req, res) => {
 const updateStoreSetting = async (req, res) => {
   try {
     const { setting } = req.body;
+    if (!setting || typeof setting !== "object") {
+      return res.status(400).send({ message: "Invalid setting payload" });
+    }
 
-    // Dynamically build the update fields
-    const updateFields = Object.keys(setting).reduce((acc, key) => {
-      acc[`setting.${key}`] = setting[key];
-      return acc;
-    }, {});
-    // Update the canonical storeSetting document (GET /store-setting/all)
+    // Merge only provided fields — never replace the whole document / wipe orders data
+    const updateFields = buildSafeStoreSettingUpdate(setting);
+    if (!Object.keys(updateFields).length) {
+      return res.status(400).send({ message: "No valid setting fields to update" });
+    }
+
     const storeSetting = await Setting.findOneAndUpdate(
       { name: "storeSetting" },
       { $set: updateFields },

@@ -122,20 +122,50 @@ const OrderTable = ({ orders }) => {
 
             <TableCell className="text-right">
               <SelectStatus id={order._id} order={order} />
-              {!order.shiprocketOrderId && (
+              {(!order.shiprocketOrderId ||
+                order.shiprocketFulfillmentStatus === "FAILED" ||
+                (order.shiprocketOrderId && !order.awbCode)) && (
                 <button
                   onClick={() => handleShiprocket(order._id)}
                   disabled={loadingIds.includes(order._id)}
                   className="mt-2 text-xs w-full bg-indigo-500 hover:bg-indigo-600 text-white px-2 py-1 rounded transition-colors disabled:opacity-50"
-                  title="Push order to Shiprocket for delivery"
+                  title="Create / resume Shiprocket shipment (order → AWB → pickup)"
                 >
-                  {loadingIds.includes(order._id) ? "Processing..." : "Ship via Shiprocket"}
+                  {loadingIds.includes(order._id)
+                    ? "Processing..."
+                    : order.shiprocketOrderId
+                      ? "Retry Shiprocket"
+                      : "Ship via Shiprocket"}
                 </button>
               )}
               {order.shiprocketOrderId && (
                 <div className="mt-2 text-xs text-center text-indigo-500 font-semibold bg-indigo-50 p-1 rounded border border-indigo-100">
-                  Shiprocket ID:<br/>
-                  {order.shiprocketOrderId}
+                  SR: {order.shiprocketOrderId}
+                  {order.awbCode && (
+                    <>
+                      <br />
+                      AWB: {order.awbCode}
+                    </>
+                  )}
+                  {order.courierName && (
+                    <>
+                      <br />
+                      {order.courierName}
+                    </>
+                  )}
+                  {order.trackingUrl && (
+                    <>
+                      <br />
+                      <a
+                        href={order.trackingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline"
+                      >
+                        Track
+                      </a>
+                    </>
+                  )}
                 </div>
               )}
             </TableCell>

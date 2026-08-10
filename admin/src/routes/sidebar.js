@@ -31,6 +31,11 @@ const sidebar = [
     icon: FiCompass,
     name: "Orders",
   },
+  {
+    path: "/shipping-monitor",
+    icon: FiPackage,
+    name: "Shipping Monitor",
+  },
 
   {
     icon: FiSlack,

@@ -15,6 +15,7 @@ const Staff = lazy(() => import("@/pages/Staff"));
 const Customers = lazy(() => import("@/pages/Customers"));
 const CustomerOrder = lazy(() => import("@/pages/CustomerOrder"));
 const Orders = lazy(() => import("@/pages/Orders"));
+const ShippingMonitor = lazy(() => import("@/pages/ShippingMonitor"));
 const OrderInvoice = lazy(() => import("@/pages/OrderInvoice"));
 const Coupons = lazy(() => import("@/pages/Coupons"));
 // const Setting = lazy(() => import("@/pages/Setting"));
@@ -95,6 +96,10 @@ const routes = [
     component: Orders,
   },
   {
+    path: "/shipping-monitor",
+    component: ShippingMonitor,
+  },
+  {
     path: "/order/:id",
     component: OrderInvoice,
   },
@@ -161,6 +166,7 @@ const routeAccessList = [
   { label: "Coupons", value: "coupons" },
   { label: "Customers", value: "customers" },
   { label: "Orders", value: "orders" },
+  { label: "Shipping Monitor", value: "shipping-monitor" },
   { label: "Staff", value: "our-staff" },
   { label: "Settings", value: "settings" },
   { label: "Languages", value: "languages" },
