@@ -84,9 +84,16 @@ const Invoice = ({ data, printRef, globalSetting, currency }) => {
               {data?.user_info?.email}{" "}
               <span className="ml-2">{data?.user_info?.contact}</span>
               <br />
-              {data?.user_info?.address}
+              {[
+                data?.user_info?.address,
+                data?.user_info?.city,
+                data?.user_info?.country,
+                data?.user_info?.zipCode,
+              ]
+                .filter(Boolean)
+                .join(", ")}
               <br />
-              {data?.city} {data?.country} {data?.zipCode}
+              {data?.user_info?.contact}
             </span>
           </div>
         </div>

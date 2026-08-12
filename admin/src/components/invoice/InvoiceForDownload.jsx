@@ -98,7 +98,16 @@ const InvoiceForDownload = ({ data, currency, globalSetting, showDateFormat, get
           <View style={S.vendorBlock}>
             <Text style={S.labelGray}>Vendor's Details</Text>
             <Text style={S.boldUpper}>{data?.user_info?.name}</Text>
-            <Text style={S.companyInfoText}>{data?.user_info?.address}</Text>
+            <Text style={S.companyInfoText}>
+              {[
+                data?.user_info?.address,
+                data?.user_info?.city,
+                data?.user_info?.country,
+                data?.user_info?.zipCode,
+              ]
+                .filter(Boolean)
+                .join(", ")}
+            </Text>
             <Text style={S.companyInfoText}>{`| GSTIN ${data?.user_info?.vat_number || "07EDPPK2298G2Z1"}`}</Text>
           </View>
           <View style={S.datesBlock}>

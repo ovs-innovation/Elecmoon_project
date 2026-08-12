@@ -9,6 +9,9 @@ const formatOrderDate = (date) => {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 };
 
+const formatUserFullAddress = (user = {}) =>
+  [user.address, user.city, user.country, user.zipCode].filter(Boolean).join(", ");
+
 const buildCompanyInfo = (globalSetting = {}) => ({
   currency: globalSetting.default_currency || "₹",
   company: globalSetting.company_name || "Elecmoon",
@@ -50,6 +53,7 @@ const buildInvoicePayload = (order, globalSetting = {}) => {
     user_info: {
       ...user,
       phone: user.contact || user.phone || "",
+      address: formatUserFullAddress(user),
     },
     cart: order.cart || [],
   };

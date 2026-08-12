@@ -109,7 +109,14 @@ const InvoiceForPrint = ({ data, printRef, globalSetting }) => {
                   {or?.user_info?.name}
                 </div>
                 <div style={{ fontSize: "13px", color: "#333", lineHeight: "1.6", maxWidth: "450px" }}>
-                  {or?.user_info?.address}
+                  {[
+                    or?.user_info?.address,
+                    or?.user_info?.city,
+                    or?.user_info?.country,
+                    or?.user_info?.zipCode,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
                   <br />
                   | GSTIN {or?.user_info?.vat_number || "07EDPPK2298G2Z1"}
                 </div>

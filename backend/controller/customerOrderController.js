@@ -63,23 +63,23 @@ const addOrder = async (req, res) => {
     const { cart, user_info, shippingOption, couponCode, discount } =
       req.body || {};
 
-    const totals = await calculateOrderTotals({
-      cart,
-      couponCode,
-      shippingOption,
-      discount,
-    });
+  const totals = await calculateOrderTotals({
+    cart,
+    couponCode,
+    shippingOption,
+    discount,
+  });
 
     const order = await OrderService.createCashOrder({
       userId: req.user._id,
       orderPayload: {
-        user_info,
-        cart: totals.cart,
-        subTotal: totals.subTotal,
-        shippingCost: totals.shippingCost,
-        discount: totals.discount,
-        total: totals.total,
-        shippingOption: totals.shippingOption,
+    user_info,
+    cart: totals.cart,
+    subTotal: totals.subTotal,
+    shippingCost: totals.shippingCost,
+    discount: totals.discount,
+    total: totals.total,
+    shippingOption: totals.shippingOption,
       },
     });
 
@@ -104,7 +104,7 @@ const createPhonePePayment = async (req, res) => {
     });
 
     return res.status(200).send(result);
-  } catch (err) {
+      } catch (err) {
     console.error("[Payment][Create] error:", err?.details || err.message);
     return res.status(err.status || 400).send({
       message: err.message || "Failed to initiate PhonePe payment",
@@ -413,7 +413,9 @@ const sendEmailInvoiceToCustomer = async (req, res) => {
       name: user?.name,
       email: user?.email,
       phone: user?.phone,
-      address: user?.address,
+      address: [user?.address, user?.city, user?.country, user?.zipCode]
+        .filter(Boolean)
+        .join(", "),
       cart: req.body.cart,
     };
 

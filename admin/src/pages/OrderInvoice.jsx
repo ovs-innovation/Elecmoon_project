@@ -126,7 +126,14 @@ const OrderInvoice = () => {
                 <div style={{ fontSize: "14px", color: "#666", marginBottom: "6px" }}>Vendor's Details </div>
                 <div style={{ fontWeight: "700", fontSize: "17px", textTransform: "uppercase", marginBottom: "8px" }}>{data?.user_info?.name}</div>
                 <div style={{ fontSize: "14px", color: "#333", lineHeight: "1.6", maxWidth: "450px" }}>
-                  {data?.user_info?.address}
+                  {[
+                    data?.user_info?.address,
+                    data?.user_info?.city,
+                    data?.user_info?.country,
+                    data?.user_info?.zipCode,
+                  ]
+                    .filter(Boolean)
+                    .join(", ")}
                   <br />
                   |
                   <br />

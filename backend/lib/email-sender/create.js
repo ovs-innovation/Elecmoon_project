@@ -83,6 +83,12 @@ const generateHeader = (doc, invoice) => {
     .moveDown();
 };
 
+function formatUserFullAddress(user = {}) {
+  return [user.address, user.city, user.country, user.zipCode]
+    .filter(Boolean)
+    .join(", ");
+}
+
 function generateCustomerInformation(doc, invoice) {
   // doc.fillColor('#444444').fontSize(20).text('Invoice', 50, 130);
 
@@ -110,7 +116,12 @@ function generateCustomerInformation(doc, invoice) {
     .text(invoice.user_info.name, 200, 155, { align: "right" })
     .text(invoice.user_info.email, 200, 170, { align: "right" })
     .text(invoice?.user_info?.phone, 200, 200, { align: "right" })
-    .text(invoice?.user_info?.address, 200, 185, { align: "right" });
+    .text(
+      formatUserFullAddress(invoice?.user_info || {}),
+      200,
+      185,
+      { align: "right", width: 350 }
+    );
 
   // doc
   //   .fontSize(10)
