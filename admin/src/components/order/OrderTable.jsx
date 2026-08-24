@@ -1,8 +1,9 @@
 import { TableBody, TableCell, TableRow } from "@windmill/react-ui";
 
 import { useTranslation } from "react-i18next";
-import { FiZoomIn } from "react-icons/fi";
+import { FiTrash2, FiZoomIn } from "react-icons/fi";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 
 //internal import
 
@@ -11,14 +12,15 @@ import Tooltip from "@/components/tooltip/Tooltip";
 import useUtilsFunction from "@/hooks/useUtilsFunction";
 import PrintReceipt from "@/components/form/others/PrintReceipt";
 import SelectStatus from "@/components/form/selectOption/SelectStatus";
+import DeleteModal from "@/components/modal/DeleteModal";
+import useToggleDrawer from "@/hooks/useToggleDrawer";
 import OrderServices from "@/services/OrderServices";
 import { notifySuccess, notifyError } from "@/utils/toast";
-import { useState } from "react";
 
 const OrderTable = ({ orders }) => {
-  // console.log('globalSetting',globalSetting)
   const { t } = useTranslation();
   const { showDateTimeFormat, currency, getNumberTwo } = useUtilsFunction();
+  const { title, serviceId, handleModalOpen } = useToggleDrawer();
   const [loadingIds, setLoadingIds] = useState([]);
 
   const handleShiprocket = async (id) => {
@@ -37,6 +39,7 @@ const OrderTable = ({ orders }) => {
 
   return (
     <>
+      <DeleteModal id={serviceId} title={title} />
       <TableBody className="dark:bg-gray-900">
         {orders?.map((order, i) => (
           <TableRow key={i + 1}>
@@ -117,6 +120,23 @@ const OrderTable = ({ orders }) => {
                     />
                   </Link>
                 </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    handleModalOpen(
+                      order._id,
+                      order?.orderId || order?.invoice || "this order"
+                    )
+                  }
+                  className="p-2 cursor-pointer text-gray-400 hover:text-red-600 focus:outline-none"
+                >
+                  <Tooltip
+                    id="delete"
+                    Icon={FiTrash2}
+                    title={t("Delete")}
+                    bgColor="#EF4444"
+                  />
+                </button>
               </div>
             </TableCell>
 

@@ -19,6 +19,7 @@ import AttributeServices from "@/services/AttributeServices";
 import CurrencyServices from "@/services/CurrencyServices";
 import ServiceServices from "@/services/ServiceServices";
 import ShortVideoServices from "@/services/ShortVideoServices";
+import OrderServices from "@/services/OrderServices";
 import { notifyError, notifySuccess } from "@/utils/toast";
 import useDisableForDemo from "@/hooks/useDisableForDemo";
 
@@ -256,6 +257,15 @@ const DeleteModal = ({ id, ids, setIsCheck, category, title, useParamId }) => {
 
       if (location.pathname === "/short-videos") {
         const res = await ShortVideoServices.deleteShortVideo(id);
+        setIsUpdate(true);
+        notifySuccess(res.message);
+        setServiceId();
+        closeModal();
+        setIsSubmitting(false);
+      }
+
+      if (location.pathname === "/orders") {
+        const res = await OrderServices.deleteOrder(id);
         setIsUpdate(true);
         notifySuccess(res.message);
         setServiceId();
