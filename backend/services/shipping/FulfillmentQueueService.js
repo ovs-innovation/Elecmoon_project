@@ -207,6 +207,20 @@ class FulfillmentQueueService {
     const ShipmentFulfillmentService = require("./ShipmentFulfillmentService");
 
     try {
+      // Manual fulfillment only — never ship from payment/order auto sources
+      const autoSources = new Set(["auto", "paid", "cod", "paid-retry"]);
+      if (autoSources.has(job.source)) {
+        await ShippingJob.findByIdAndUpdate(job._id, {
+          $set: {
+            status: "skipped",
+            completedAt: new Date(),
+            lastError: "manual_fulfillment_only",
+          },
+          $unset: { lockedAt: 1 },
+        });
+        return;
+      }
+
       const orderSnap = await Order.findById(job.order).select(
         "shiprocketShipmentId awbCode shiprocketPickupScheduled"
       );

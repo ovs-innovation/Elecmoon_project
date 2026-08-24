@@ -2,6 +2,11 @@ import React from "react";
 import dayjs from "dayjs";
 
 const OrderHistory = ({ order, currency }) => {
+  const displayStatus =
+    order?.status === "Delivered" || order?.deliveryStatus === "Delivered"
+      ? "Delivered"
+      : order?.status;
+
   return (
     <>
       <td className="px-5 py-3 leading-6 whitespace-nowrap">
@@ -19,17 +24,17 @@ const OrderHistory = ({ order, currency }) => {
         <span className="text-sm">{order.paymentMethod}</span>
       </td>
       <td className="px-5 py-3 leading-6 text-center whitespace-nowrap font-medium text-sm">
-        {order.status === "Delivered" && (
-          <span className="text-green-500">{order.status}</span>
+        {displayStatus === "Delivered" && (
+          <span className="text-green-500">{displayStatus}</span>
         )}
-        {order.status === "Pending" && (
-          <span className="text-orange-500">{order.status}</span>
+        {displayStatus === "Pending" && (
+          <span className="text-orange-500">{displayStatus}</span>
         )}
-        {order.status === "Cancel" && (
-          <span className="text-red-500">{order.status}</span>
+        {displayStatus === "Cancel" && (
+          <span className="text-red-500">{displayStatus}</span>
         )}
-        {order.status === "Processing" && (
-          <span className="text-indigo-500">{order.status}</span>
+        {displayStatus === "Processing" && (
+          <span className="text-indigo-500">{displayStatus}</span>
         )}
       </td>
       <td className="px-5 py-3 leading-6 text-center whitespace-nowrap">

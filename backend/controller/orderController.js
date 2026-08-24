@@ -170,14 +170,16 @@ const getOrderById = async (req, res) => {
 
 const updateOrder = (req, res) => {
   const newStatus = req.body.status;
+  const updateFields = { status: newStatus };
+  if (newStatus === "Delivered") {
+    updateFields.deliveryStatus = "Delivered";
+  }
   Order.updateOne(
     {
       _id: req.params.id,
     },
     {
-      $set: {
-        status: newStatus,
-      },
+      $set: updateFields,
     },
     (err) => {
       if (err) {

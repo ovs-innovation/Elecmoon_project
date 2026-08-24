@@ -46,8 +46,8 @@ class ShiprocketService {
       String(process.env.SHIPROCKET_ENABLED || "true").toLowerCase() !==
       "false";
     const autoFulfill =
-      String(process.env.SHIPROCKET_AUTO_FULFILL || "true").toLowerCase() !==
-      "false";
+      String(process.env.SHIPROCKET_AUTO_FULFILL || "false").toLowerCase() ===
+      "true";
 
     return {
       email,
