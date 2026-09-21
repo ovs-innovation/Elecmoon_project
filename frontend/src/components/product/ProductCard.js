@@ -3,10 +3,11 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useCart } from "react-use-cart";
-import { FiHeart, FiEye, FiShoppingBag, FiShoppingCart, FiMessageSquare, FiZap, FiDownload } from "react-icons/fi";
+import { FiHeart, FiEye, FiShoppingBag, FiShoppingCart, FiMessageSquare, FiZap } from "react-icons/fi";
 import { getCategorySearchUrl } from "@utils/categoryUrl";
 import { isInStock } from "@utils/inventory";
 import Stock from "@components/common/Stock";
+import DatasheetActions from "@components/product/DatasheetActions";
 import { useContext } from "react";
 import { WishlistContext } from "@context/WishlistContext";
 import { UserContext } from "@context/UserContext";
@@ -298,18 +299,12 @@ const ProductCard = ({
             </div>
           )}
 
-          {product?.datasheetUrl ? (
-            <a
-              href={product.datasheetUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="mb-3 w-full flex items-center justify-center gap-1.5 border border-gray-200 hover:border-[#0b1d3d] text-[#0b1d3d] py-2 px-3 rounded-xl text-[10px] sm:text-[11px] font-black uppercase tracking-wide transition-colors"
-            >
-              <FiDownload className="w-3.5 h-3.5 shrink-0" />
-              Download Datasheet
-            </a>
-          ) : null}
+          <DatasheetActions
+            url={product?.datasheetUrl}
+            size="sm"
+            stopPropagation
+            className="mb-3 w-full"
+          />
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-2 w-full min-w-0">

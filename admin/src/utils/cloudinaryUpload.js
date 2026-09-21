@@ -285,8 +285,17 @@ export const validatePdfFile = (file, maxSizeBytes = MAX_PDF_SIZE_BYTES) => {
   return null;
 };
 
+/** Prefer raw; fall back to auto (unsigned presets often only allow image/auto). */
+export const getPdfUploadUrls = (imageUploadUrl) => {
+  const base = normalizeEnvValue(imageUploadUrl);
+  return [
+    base.replace("/image/upload", "/raw/upload"),
+    base.replace("/image/upload", "/auto/upload"),
+  ].filter((url, i, arr) => url && arr.indexOf(url) === i);
+};
+
 export const getRawUploadUrl = (imageUploadUrl) =>
-  normalizeEnvValue(imageUploadUrl).replace("/image/upload", "/raw/upload");
+  getPdfUploadUrls(imageUploadUrl)[0];
 
 export const uploadPdfToCloudinary = async ({
   file,
@@ -295,40 +304,42 @@ export const uploadPdfToCloudinary = async ({
   onProgress,
   signal,
 }) => {
-  const rawConfig = {
-    ...config,
-    uploadUrl: getRawUploadUrl(config.uploadUrl),
-  };
-
+  const uploadUrls = getPdfUploadUrls(config.uploadUrl);
   let lastError;
 
-  for (let attempt = 0; attempt <= MAX_UPLOAD_RETRIES; attempt += 1) {
-    try {
-      return await postToCloudinary({
-        file,
-        folder,
-        config: rawConfig,
-        onProgress,
-        signal,
-      });
-    } catch (error) {
-      lastError = error;
+  for (const uploadUrl of uploadUrls) {
+    const pdfConfig = { ...config, uploadUrl };
 
-      if (
-        signal?.aborted ||
-        error?.name === "CanceledError" ||
-        error?.code === "ERR_CANCELED"
-      ) {
-        throw error;
+    for (let attempt = 0; attempt <= MAX_UPLOAD_RETRIES; attempt += 1) {
+      try {
+        return await postToCloudinary({
+          file,
+          folder,
+          config: pdfConfig,
+          onProgress,
+          signal,
+        });
+      } catch (error) {
+        lastError = error;
+
+        if (
+          signal?.aborted ||
+          error?.name === "CanceledError" ||
+          error?.code === "ERR_CANCELED"
+        ) {
+          throw error;
+        }
+
+        if (!isRetryableCloudinaryError(error)) {
+          break;
+        }
+
+        if (attempt < MAX_UPLOAD_RETRIES) {
+          await sleep(getRetryDelayMs(error, attempt));
+        }
       }
-
-      if (!isRetryableCloudinaryError(error) || attempt === MAX_UPLOAD_RETRIES) {
-        throw error;
-      }
-
-      await sleep(getRetryDelayMs(error, attempt));
     }
   }
 
-  throw lastError;
+  throw lastError || new Error("PDF upload failed.");
 };

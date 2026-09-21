@@ -1,203 +1,168 @@
-import React, { useContext, useMemo } from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
-import { FaFacebookF, FaInstagram, FaLinkedinIn, FaTwitter, FaWhatsapp } from "react-icons/fa";
-import { FiPhoneCall, FiMail, FiMapPin } from "react-icons/fi";
+import Image from "next/image";
+import {
+  FaFacebookF,
+  FaInstagram,
+  FaLinkedinIn,
+  FaTwitter,
+  FaWhatsapp,
+  FaYoutube,
+  FaPinterestP,
+} from "react-icons/fa";
+import { FiHeadphones } from "react-icons/fi";
 
 import useGetSetting from "@hooks/useGetSetting";
-import useUtilsFunction from "@hooks/useUtilsFunction";
-import { SidebarContext } from "@context/SidebarContext";
 import {
-  getFooterBlock,
   getFooterSocialLinks,
   FOOTER_FALLBACK,
 } from "@utils/footerLinks";
 
 const SOCIAL_ICONS = {
   facebook: FaFacebookF,
-  instagram: FaInstagram,
-  linkedin: FaLinkedinIn,
   twitter: FaTwitter,
   whatsapp: FaWhatsapp,
+  pinterest: FaPinterestP,
+  linkedin: FaLinkedinIn,
+  instagram: FaInstagram,
+  youtube: FaYoutube,
 };
 
-const FooterLinkColumn = ({ title, links }) => {
-  if (!links?.length) return null;
+const DEFAULT_SOCIALS = [
+  { key: "facebook", href: "https://facebook.com", label: "Facebook" },
+  { key: "twitter", href: "https://twitter.com", label: "Twitter" },
+  { key: "whatsapp", href: "https://wa.me/", label: "WhatsApp" },
+  { key: "pinterest", href: "https://pinterest.com", label: "Pinterest" },
+  { key: "linkedin", href: "https://linkedin.com", label: "LinkedIn" },
+  { key: "instagram", href: "https://instagram.com", label: "Instagram" },
+  { key: "youtube", href: "https://youtube.com", label: "YouTube" },
+];
 
-  return (
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-black">{title}</h3>
-      <ul className="space-y-2 text-sm text-gray-700">
-        {links.map(({ title: linkTitle, href }) => (
-          <li key={`${href}-${linkTitle}`}>
-            <Link href={href} className="hover:text-[#ED1C24] transition">
-              {linkTitle}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
+const headingClass =
+  "font-serif text-[13px] font-bold uppercase tracking-wide text-[#111] mb-4 leading-5 min-h-[20px]";
+
+const linkClass =
+  "text-[14px] leading-6 text-[#334155] hover:text-[#ED1C24] transition-colors";
+
+const FooterColumn = ({ title, links }) => (
+  <div className="min-w-0">
+    <h3 className={headingClass}>{title}</h3>
+    <ul className="space-y-2.5">
+      {links.map(({ title: label, href }) => (
+        <li key={`${href}-${label}`}>
+          <Link href={href} className={linkClass}>
+            {label}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 const Footer = () => {
   const { storeCustomizationSetting } = useGetSetting();
-  const { showingTranslateValue } = useUtilsFunction();
-  const { services } = useContext(SidebarContext);
-
   const footer = storeCustomizationSetting?.footer;
-  const footerPhone = footer?.block4_phone;
-  const footerAddress = showingTranslateValue(footer?.block4_address);
+  const navbar = storeCustomizationSetting?.navbar;
+
+  const footerPhone =
+    footer?.block4_phone || navbar?.phone || "+91 00000 00000";
   const footerEmail =
     footer?.block4_email ||
     storeCustomizationSetting?.contact_us?.email_box_email?.en ||
     "elecmoonofficial@gmail.com";
 
-  const generalBlock = useMemo(() => {
-    const fromAdmin = getFooterBlock(footer, 1, showingTranslateValue);
-    if (fromAdmin?.links?.length) return fromAdmin;
-    return FOOTER_FALLBACK.general;
-  }, [footer, showingTranslateValue]);
+  const policies = FOOTER_FALLBACK.policies;
+  const information = FOOTER_FALLBACK.information;
+  const account = FOOTER_FALLBACK.account;
 
-  const legalBlock = useMemo(() => {
-    const fromAdmin = getFooterBlock(footer, 2, showingTranslateValue);
-    if (fromAdmin?.links?.length) return fromAdmin;
-    return FOOTER_FALLBACK.legal;
-  }, [footer, showingTranslateValue]);
-
-  const socialLinks = useMemo(() => getFooterSocialLinks(footer), [footer]);
-
-  const aboutText =
-    showingTranslateValue(footer?.shipping_card) ||
-    "At Elecmoon, we specialize in high-quality BMS, battery cells, and energy storage solutions for EV, solar, and industrial applications.";
+  const socialLinks = useMemo(() => {
+    const fromAdmin = getFooterSocialLinks(footer);
+    if (!fromAdmin.length) return DEFAULT_SOCIALS;
+    const byKey = Object.fromEntries(fromAdmin.map((s) => [s.key, s]));
+    return DEFAULT_SOCIALS.map((s) => byKey[s.key] || s).filter(
+      (s) => SOCIAL_ICONS[s.key]
+    );
+  }, [footer]);
 
   return (
-    <div className="bg-gray-100 text-gray-900 pt-10 pb-16 relative">
-      <div className="absolute right-0 top-0 bottom-0 w-1 bg-[#ED1C24]" aria-hidden />
-
-      <div className="max-w-screen-2xl mx-auto px-4 sm:px-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12">
-          {/* About */}
-          <div className="space-y-4">
-            <Link href="/" className="inline-block">
-              <div className="relative overflow-hidden flex items-center h-[48px] sm:h-[58px] lg:h-[68px] xl:h-[78px] w-[150px] sm:w-[190px] lg:w-[230px] xl:w-[260px]">
-                <img
+    <footer className="bg-[#f7f7f7] text-[#222] border-t-[3px] border-[#ED1C24]">
+      <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-16 py-10 sm:py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-x-10 gap-y-10 xl:gap-x-12 items-start">
+          {/* Brand — same top edge as other columns */}
+          <div className="sm:col-span-2 xl:col-span-1 min-w-0">
+            <Link href="/" className="inline-block mb-4">
+              <div className="relative h-[96px] w-[280px] max-w-full">
+                <Image
                   src="/logo/elecmoon-transparent.png"
-                  alt="ELECMOON"
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-auto object-contain object-left origin-left h-[160%] scale-[1.55] sm:scale-[1.6] lg:scale-[1.65]"
+                  alt="Elecmoon"
+                  fill
+                  sizes="280px"
+                  className="object-contain object-left scale-[1.35] origin-left"
                 />
               </div>
             </Link>
-            <p className="text-sm leading-7 text-gray-700">{aboutText}</p>
 
-            {socialLinks.length > 0 ? (
-              <div className="flex flex-wrap gap-3 pt-2">
-                {socialLinks.map(({ key, href, label }) => {
-                  const Icon = SOCIAL_ICONS[key];
-                  if (!Icon) return null;
-                  return (
-                    <a
-                      key={key}
-                      href={href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={label}
-                      className="w-10 h-10 rounded-full bg-[#000435] text-white flex items-center justify-center hover:bg-[#ED1C24] transition"
-                    >
-                      <Icon />
-                    </a>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-
-          {/* Contact — from admin footer block 4 */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-black">Contact Info</h3>
-            <div className="text-sm space-y-3 text-gray-700">
-              {footerPhone ? (
-                <div className="flex items-start gap-2">
-                  <FiPhoneCall className="text-[#ED1C24] mt-1 flex-shrink-0" />
+            <div className="flex items-start gap-2.5 mb-5">
+              <FiHeadphones className="w-4 h-4 text-[#666] mt-1 shrink-0" />
+              <div className="text-[13px] leading-relaxed text-[#555]">
+                <p>
+                  Call Us:{" "}
                   <a
-                    href={`tel:${footerPhone.replace(/\s/g, "")}`}
-                    className="font-medium hover:text-[#ED1C24] transition"
+                    href={`tel:${String(footerPhone).replace(/\s/g, "")}`}
+                    className="font-semibold text-[#ED1C24] hover:underline"
                   >
                     {footerPhone}
                   </a>
-                </div>
-              ) : null}
-              <div className="flex items-start gap-2">
-                <FiMail className="text-[#ED1C24] mt-1 flex-shrink-0" />
-                <a
-                  href={`mailto:${footerEmail}`}
-                  className="font-medium hover:text-[#ED1C24] transition break-all"
-                >
-                  {footerEmail}
-                </a>
+                </p>
+                <p className="text-[12px] text-[#888] mt-0.5">
+                  9am to 6pm (Sun Off)
+                </p>
+                <p className="mt-2">
+                  Email Us:{" "}
+                  <a
+                    href={`mailto:${footerEmail}`}
+                    className="font-semibold text-[#ED1C24] hover:underline"
+                  >
+                    {footerEmail}
+                  </a>
+                </p>
               </div>
-              {footerAddress ? (
-                <div className="flex items-start gap-2">
-                  <FiMapPin className="text-[#ED1C24] mt-1 flex-shrink-0" />
-                  <p>{footerAddress}</p>
-                </div>
-              ) : null}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {socialLinks.map(({ key, href, label }) => {
+                const Icon = SOCIAL_ICONS[key];
+                if (!Icon) return null;
+                return (
+                  <a
+                    key={key}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="w-8 h-8 rounded-full bg-[#555] text-white flex items-center justify-center hover:bg-[#ED1C24] transition-colors"
+                  >
+                    <Icon className="w-[13px] h-[13px]" />
+                  </a>
+                );
+              })}
             </div>
           </div>
 
-          {/* Services — database */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-black">Services</h3>
-            <ul className="space-y-2 text-sm text-gray-700">
-              {services?.length > 0 ? (
-                <>
-                  {services.map((service) => {
-                    const name = showingTranslateValue(service.name);
-                    if (!name) return null;
-                    const href = service.slug ? `/service/${service.slug}` : "/services";
-                    return (
-                      <li key={service._id}>
-                        <Link href={href} className="hover:text-[#ED1C24] transition">
-                          {name}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                  <li>
-                    <Link
-                      href="/services"
-                      className="font-semibold text-[#ED1C24] hover:underline transition"
-                    >
-                      View All Services →
-                    </Link>
-                  </li>
-                </>
-              ) : (
-                <li className="text-gray-400 text-xs">No services available.</li>
-              )}
-            </ul>
-          </div>
-
-          {/* General Links — admin footer block 1 */}
-          <FooterLinkColumn title={generalBlock.title} links={generalBlock.links} />
-
-          {/* Legal — admin footer block 2 */}
-          <FooterLinkColumn title={legalBlock.title} links={legalBlock.links} />
-        </div>
-
-        <div className="mt-10 pt-6 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-          <p>&copy; {new Date().getFullYear()} Elecmoon. All rights reserved.</p>
-          {legalBlock.links.length > 0 ? (
-            <div className="flex flex-wrap items-center justify-center gap-4">
-              {legalBlock.links.slice(0, 4).map(({ title, href }) => (
-                <Link key={href} href={href} className="hover:text-[#ED1C24] transition">
-                  {title.replace(/ Policy| & Conditions/g, "")}
-                </Link>
-              ))}
-            </div>
-          ) : null}
+          <FooterColumn title={policies.title} links={policies.links} />
+          <FooterColumn title={information.title} links={information.links} />
+          <FooterColumn title={account.title} links={account.links} />
         </div>
       </div>
-    </div>
+
+      <div className="bg-[#ececec] border-t border-[#e0e0e0]">
+        <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-16 py-3.5">
+          <p className="text-center text-[12px] text-[#777]">
+            © {new Date().getFullYear()} Elecmoon — All rights reserved
+          </p>
+        </div>
+      </div>
+    </footer>
   );
 };
 

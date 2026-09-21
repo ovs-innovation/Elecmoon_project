@@ -15,22 +15,15 @@ const HomeCategoriesSection = () => {
 
   if (isCategoriesLoading) {
     return (
-      <section id="categories" className="bg-gray-50 py-10 lg:py-14 scroll-mt-28">
+      <section id="categories" className="bg-gray-50 py-6 lg:py-8 scroll-mt-28">
         <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-10">
-          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-8" />
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse mb-5" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 sm:gap-4 lg:gap-5">
             {Array.from({ length: 7 }).map((_, i) => (
-              <div
-                key={i}
-                className="min-h-[248px] bg-white rounded-2xl animate-pulse border border-gray-100 overflow-hidden"
-              >
-                <div className="p-3 pb-1">
-                  <div className="aspect-[5/4] bg-gray-100 rounded-xl" />
-                </div>
-                <div className="px-4 py-3 border-t border-gray-50">
-                  <div className="h-3 bg-gray-100 rounded w-3/4 mb-2" />
-                  <div className="h-2 bg-gray-50 rounded w-1/3" />
-                </div>
+              <div key={i} className="flex flex-col items-center py-2 animate-pulse">
+                <div className="w-[100px] h-[100px] sm:w-[112px] sm:h-[112px] rounded-full bg-gray-100 border border-gray-50" />
+                <div className="h-3 bg-gray-100 rounded w-16 mt-3" />
+                <div className="h-2 bg-gray-50 rounded w-10 mt-1.5" />
               </div>
             ))}
           </div>
@@ -44,19 +37,19 @@ const HomeCategoriesSection = () => {
   return (
     <section
       id="categories"
-      className="bg-gray-50 py-10 lg:py-14 border-y border-gray-100 scroll-mt-28"
+      className="bg-gray-50 py-6 lg:py-8 border-y border-gray-100 scroll-mt-28"
     >
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-6 lg:px-10">
-        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 mb-3 rounded-full bg-[#0b1d3d]/5 text-[10px] font-black text-[#0b1d3d] uppercase tracking-[0.2em]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-2 rounded-full bg-[#0b1d3d]/5 text-[10px] font-black text-[#0b1d3d] uppercase tracking-[0.2em]">
               <FiGrid className="w-3 h-3" />
               Shop by Category
             </div>
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
               Browse Our Product Categories
             </h2>
-            <p className="text-gray-500 text-sm mt-2 max-w-xl">
+            <p className="text-gray-500 text-sm mt-1.5 max-w-xl">
               Batteries, BMS, cells and components — pick a category to see related products.
             </p>
           </div>

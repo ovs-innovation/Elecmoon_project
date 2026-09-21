@@ -1,5 +1,4 @@
 import { Avatar, TableBody, TableCell, TableRow, Badge } from "@windmill/react-ui";
-import { Link } from "react-router-dom";
 import { useState } from "react";
 
 //internal import
@@ -40,6 +39,7 @@ const CategoryTable = ({
   setIsCheck,
   useParamId,
   showChild,
+  showParentColumn = true,
 }) => {
   const { title, serviceId, handleModalOpen, handleUpdate } = useToggleDrawer();
   const { showingTranslateValue } = useUtilsFunction();
@@ -85,23 +85,17 @@ const CategoryTable = ({
             </TableCell>
 
             <TableCell className="font-medium text-sm min-w-[180px]">
+              <span className="font-semibold text-gray-800 dark:text-gray-200">
+                {showingTranslateValue(category?.name)}
+              </span>
               {category?.children?.length > 0 && !showChild ? (
-                <Link
-                  to={`/categories/${category?._id}`}
-                  className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 hover:underline transition-colors"
-                >
-                  <span>{showingTranslateValue(category?.name)}</span>
-                  <span className="text-[10px] font-medium px-1.5 py-0.2 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 rounded-full border border-emerald-200/70 dark:border-emerald-700/50">
-                    {category?.children?.length}
-                  </span>
-                </Link>
-              ) : (
-                <span className="font-semibold text-gray-800 dark:text-gray-200">
-                  {showingTranslateValue(category?.name)}
+                <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full border border-gray-200">
+                  {category.children.length} sub
                 </span>
-              )}
+              ) : null}
             </TableCell>
 
+            {showParentColumn ? (
             <TableCell className="text-xs max-w-[180px]">
               {(() => {
                 const parentName = category._parentLabel || category.parentName || "Home";
@@ -119,6 +113,7 @@ const CategoryTable = ({
                 );
               })()}
             </TableCell>
+            ) : null}
 
             <TableCell className="text-center">
               <ShowHideButton

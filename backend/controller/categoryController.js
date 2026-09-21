@@ -104,9 +104,10 @@ const getAllCategories = async (req, res) => {
 
 const getCategoryBySlug = async (req, res) => {
   try {
-    const slug = String(req.params.slug || "")
+    const rawSlug = String(req.params.slug || "")
       .toLowerCase()
       .trim();
+    const slug = rawSlug.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 
     if (!slug) {
       return res.status(400).send({ message: "Category slug is required." });
@@ -114,18 +115,39 @@ const getCategoryBySlug = async (req, res) => {
 
     let category = await Category.findOne({ slug, status: "show" });
 
+    // Also try raw slug and trailing-hyphen variants
+    if (!category && rawSlug !== slug) {
+      category = await Category.findOne({ slug: rawSlug, status: "show" });
+    }
+
     if (!category) {
       const categories = await Category.find({ status: "show" });
-      category = categories.find(
-        (cat) => slugifyCategoryName(cat.name) === slug
-      );
+      category = categories.find((cat) => {
+        const fromName = slugifyCategoryName(cat.name);
+        const stored = String(cat.slug || "")
+          .toLowerCase()
+          .trim()
+          .replace(/^-+|-+$/g, "");
+        return fromName === slug || stored === slug;
+      });
     }
 
     if (!category) {
       return res.status(404).send({ message: "Category not found." });
     }
 
-    res.send(category);
+    const children = await Category.find({
+      parentId: String(category._id),
+      status: "show",
+    }).select("_id name slug icon parentId");
+
+    const payload = category.toObject ? category.toObject() : { ...category };
+    payload.children = children;
+    if (!payload.slug) {
+      payload.slug = slugifyCategoryName(payload.name);
+    }
+
+    res.send(payload);
   } catch (err) {
     res.status(500).send({
       message: err.message,

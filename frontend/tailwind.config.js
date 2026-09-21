@@ -8,8 +8,9 @@ module.exports = {
 
   theme: {
     fontFamily: {
-      sans: ["Open Sans", "sans-serif"],
-      serif: ["Inter", "sans-serif"],
+      sans: ['"Source Sans 3"', "system-ui", "sans-serif"],
+      serif: ['"Outfit"', "system-ui", "sans-serif"],
+      display: ['"Outfit"', "system-ui", "sans-serif"],
       DejaVu: ["DejaVu Sans", "Arial", "sans-serif"],
     },
     extend: {

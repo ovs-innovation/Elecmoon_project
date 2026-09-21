@@ -8,6 +8,7 @@ import AttributeServices from "@/services/AttributeServices";
 import CategoryServices from "@/services/CategoryServices";
 import CouponServices from "@/services/CouponServices";
 import CurrencyServices from "@/services/CurrencyServices";
+import BrandServices from "@/services/BrandServices";
 import LanguageServices from "@/services/LanguageServices";
 import ProductServices from "@/services/ProductServices";
 import { notifyError, notifySuccess } from "@/utils/toast";
@@ -26,12 +27,18 @@ const ShowHideButton = ({ id, status, category, currencyStatusName }) => {
         newStatus = "show";
       }
 
-      if (location.pathname === "/categories" || category) {
+      if (location.pathname === "/categories" || location.pathname === "/subcategories" || category) {
         const res = await CategoryServices.updateStatus(id, {
           status: newStatus,
         });
         setIsUpdate(true);
         notifySuccess(res.message);
+      }
+
+      if (location.pathname === "/brands") {
+        const res = await BrandServices.updateStatus(id);
+        setIsUpdate(true);
+        notifySuccess(res.message || `Brand is now ${newStatus}`);
       }
 
       if (location.pathname === "/products") {

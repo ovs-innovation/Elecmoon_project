@@ -20,6 +20,8 @@ import { WishlistContext } from "@context/WishlistContext";
 import { getCategorySearchUrl } from "@utils/categoryUrl";
 import { isCloudinaryUrl, optimizeImageUrl } from "@utils/cloudinaryImage";
 import NavbarSearch from "@components/navbar/NavbarSearch";
+import DepartmentsNav from "@components/navbar/DepartmentsNav";
+import BrandServices from "@services/BrandServices";
 
 const CategoryNavIcon = ({ src, alt }) => {
   const [failed, setFailed] = useState(false);
@@ -57,6 +59,8 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
+  const [mobileBrandsOpen, setMobileBrandsOpen] = useState(false);
+  const [mobileBrands, setMobileBrands] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isScrolled, setIsScrolled] = useState(false);
   const { state: { userInfo } } = useContext(UserContext);
@@ -82,7 +86,14 @@ const Navbar = () => {
     setMobileMenuOpen(false);
     setMobileServicesOpen(false);
     setMobileCategoriesOpen(false);
+    setMobileBrandsOpen(false);
   }, [router.asPath]);
+
+  useEffect(() => {
+    BrandServices.getShowingBrands()
+      .then((data) => setMobileBrands(Array.isArray(data) ? data : []))
+      .catch(() => setMobileBrands([]));
+  }, []);
 
   // Close desktop dropdowns when clicking outside
   useEffect(() => {
@@ -277,59 +288,13 @@ const Navbar = () => {
                 </div>
               </nav>
 
-              {/* ── Right side: Categories + Search ── */}
+              {/* ── Right side: Search ── */}
               <div className="hidden lg:flex items-center gap-2 ml-auto flex-shrink-0">
-
-                {/* Categories dropdown */}
-                <div
-                  data-nav-dropdown
-                  className="relative"
-                  onMouseEnter={() => handleDropdownEnter("categories")}
-                  onMouseLeave={() => handleDropdownLeave("categories")}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleDropdownToggle("categories")}
-                    className={`h-10 px-5 flex items-center gap-2.5 rounded-full text-[12px] font-black uppercase tracking-wider transition-all border ${isDropdownOpen("categories") ? "bg-[#0b1d3d] text-white border-[#0b1d3d]" : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300"}`}
-                  >
-                    <FiGrid className="w-4 h-4" />
-                    <span className="hidden xl:inline">Categories</span>
-                    <FiChevronDown className={`w-3.5 h-3.5 transition-transform ${isDropdownOpen("categories") ? "rotate-180" : ""}`} />
-                  </button>
-                  <div className={`absolute top-full pt-2 right-0 w-64 bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-gray-100 transition-all duration-200 origin-top z-[60] overflow-hidden ${isDropdownOpen("categories") ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-2 pointer-events-none"}`}>
-                    <div className="py-2 max-h-[55vh] overflow-y-auto">
-                      {isCategoriesLoading ? (
-                        Array.from({ length: 5 }).map((_, i) => (
-                          <div key={i} className="px-5 py-3 animate-pulse"><div className="h-3 bg-gray-100 rounded w-3/4" /></div>
-                        ))
-                      ) : categories.length > 0 ? (
-                        categories.map((cat) => {
-                          const catName = showingTranslateValue(cat.name);
-                          return (
-                          <Link key={cat._id} href={getCategorySearchUrl(cat._id, catName, cat.slug)} onClick={closeDropdown} className="flex items-center gap-3 px-4 py-2.5 text-[13px] font-bold text-gray-600 hover:text-[#0b1d3d] hover:bg-gray-50 transition-all group/ci min-w-0">
-                            <CategoryNavIcon src={cat.icon} alt={catName} />
-                            <span className="flex-1 min-w-0 truncate">{catName}</span>
-                            <FiChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover/ci:text-[#ED1C24] flex-shrink-0" />
-                          </Link>
-                        );})
-                      ) : (
-                        <div className="px-5 py-4 text-gray-400 text-xs">No categories found.</div>
-                      )}
-                    </div>
-                    <div className="p-3 border-t border-gray-50">
-                      <Link href="/search" onClick={closeDropdown} className="block w-full py-2 text-center bg-[#0b1d3d] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[#1a2e4d] transition-colors">
-                        Browse All →
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Search */}
                 <NavbarSearch
                   value={searchQuery}
                   onChange={setSearchQuery}
                   onSubmit={handleSearch}
-                  className="w-40 xl:w-64 2xl:w-80"
+                  className="w-48 xl:w-72 2xl:w-96"
                 />
               </div>
 
@@ -508,6 +473,8 @@ const Navbar = () => {
             </div>
           </div>
         </div>
+
+        <DepartmentsNav />
       </div>
 
       {/* ── Mobile Menu ── */}
@@ -633,6 +600,37 @@ const Navbar = () => {
                   </div>
                 )}
               </>
+            )}
+
+            {/* Mobile Shop by Brand */}
+            <button
+              type="button"
+              onClick={() => setMobileBrandsOpen(!mobileBrandsOpen)}
+              className="w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-[13px] font-bold text-gray-700 hover:bg-gray-50 hover:text-[#0b1d3d] transition-all mt-1"
+            >
+              Shop by Brand
+              <FiChevronDown className={`w-4 h-4 transition-transform ${mobileBrandsOpen ? "rotate-180" : ""}`} />
+            </button>
+            {mobileBrandsOpen && (
+              <div className="ml-2 pl-2 border-l-2 border-gray-100 space-y-1">
+                {mobileBrands.length > 0 ? (
+                  mobileBrands.map((brand) => (
+                    <Link
+                      key={brand._id}
+                      href={`/brand/${brand.slug || brand._id}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center justify-between px-4 py-2.5 rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:text-[#0b1d3d] transition-all"
+                    >
+                      {brand.name}
+                      <FiChevronRight className="w-3 h-3 text-gray-200" />
+                    </Link>
+                  ))
+                ) : (
+                  <p className="px-4 py-2 text-xs text-gray-400">
+                    No brands yet. Add in Admin → Brands.
+                  </p>
+                )}
+              </div>
             )}
           </div>
 

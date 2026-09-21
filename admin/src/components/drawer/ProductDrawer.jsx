@@ -34,6 +34,7 @@ import ActiveButton from "@/components/form/button/ActiveButton";
 import InputValueFive from "@/components/form/input/InputValueFive";
 import Uploader from "@/components/image-uploader/Uploader";
 import ParentCategory from "@/components/category/ParentCategory";
+import BrandServices from "@/services/BrandServices";
 import UploaderThree from "@/components/image-uploader/UploaderThree";
 import AttributeOptionTwo from "@/components/attribute/AttributeOptionTwo";
 import AttributeListTable from "@/components/attribute/AttributeListTable";
@@ -47,6 +48,7 @@ const ProductDrawer = ({ id }) => {
   // Service selection state — MUST be declared before useProductSubmit
   const [allServices, setAllServices] = useState([]);
   const [selectedServices, setSelectedServices] = useState([]);
+  const [brandOptions, setBrandOptions] = useState([]);
 
   const {
     tag,
@@ -82,6 +84,8 @@ const ProductDrawer = ({ id }) => {
     setSelectedCategory,
     setDefaultCategory,
     defaultCategory,
+    selectedBrand,
+    setSelectedBrand,
     handleProductSlug,
     handleSelectLanguage,
     handleIsCombination,
@@ -107,6 +111,12 @@ const ProductDrawer = ({ id }) => {
     ServiceServices.getAllServices()
       .then((data) => setAllServices(Array.isArray(data) ? data : []))
       .catch(() => setAllServices([]));
+  }, []);
+
+  useEffect(() => {
+    BrandServices.getAllBrands()
+      .then((data) => setBrandOptions(Array.isArray(data) ? data : []))
+      .catch(() => setBrandOptions([]));
   }, []);
 
   // When editing a product, pre-populate selected services
@@ -548,6 +558,24 @@ const ProductDrawer = ({ id }) => {
                     options={selectedCategory}
                     placeholder={"Default Category"}
                   ></Multiselect>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-6 gap-3 md:gap-5 xl:gap-6 lg:gap-6 mb-6">
+                <LabelArea label="Brand" />
+                <div className="col-span-8 sm:col-span-4">
+                  <select
+                    value={selectedBrand || ""}
+                    onChange={(e) => setSelectedBrand(e.target.value)}
+                    className="w-full h-12 border border-gray-200 rounded-md px-3 text-sm dark:bg-gray-700 dark:border-gray-600"
+                  >
+                    <option value="">No brand</option>
+                    {brandOptions.map((b) => (
+                      <option key={b._id} value={b._id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

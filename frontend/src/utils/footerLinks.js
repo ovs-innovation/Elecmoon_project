@@ -67,8 +67,44 @@ export const getFooterBlock = (footer, blockNum, showingTranslateValue) => {
 };
 
 export const FOOTER_FALLBACK = {
+  policies: {
+    title: "POLICIES",
+    links: [
+      { title: "Privacy Policy", href: "/privacy-policy" },
+      { title: "Terms of service", href: "/terms-and-conditions" },
+      { title: "Shipping & Replacement Policies", href: "/shipping-policy" },
+      { title: "Cash on Delivery (COD) Policy", href: "/shipping-policy" },
+      { title: "Return & Cancellation Policy", href: "/return-and-refund-policy" },
+      { title: "Feedback", href: "/contact-us" },
+    ],
+  },
+  information: {
+    title: "INFORMATION",
+    links: [
+      { title: "About Us", href: "/about-us" },
+      { title: "Contact Us", href: "/contact-us" },
+      { title: "HELP", href: "/contact-us" },
+      { title: "Sell your product", href: "/contact-us" },
+      { title: "Careers", href: "/contact-us" },
+      { title: "FAQ's", href: "/faq" },
+      { title: "My account", href: "/user/dashboard" },
+    ],
+  },
+  account: {
+    title: "MY ACCOUNT",
+    links: [
+      { title: "Register or login", href: "/auth/login" },
+      { title: "My cart", href: "/checkout" },
+      { title: "Checkout", href: "/checkout" },
+      { title: "Payment options", href: "/checkout" },
+      { title: "My Wishlist", href: "/user/my-wishlist" },
+      { title: "Forget Password", href: "/auth/forget-password" },
+      { title: "Track your order", href: "/user/my-orders" },
+    ],
+  },
+  // legacy aliases used elsewhere
   general: {
-    title: "General Links",
+    title: "INFORMATION",
     links: [
       { title: "Home", href: "/" },
       { title: "About Us", href: "/about-us" },
@@ -77,7 +113,7 @@ export const FOOTER_FALLBACK = {
     ],
   },
   legal: {
-    title: "Legal & Policies",
+    title: "POLICIES",
     links: [
       { title: "Privacy Policy", href: "/privacy-policy" },
       { title: "Terms & Conditions", href: "/terms-and-conditions" },
@@ -92,10 +128,12 @@ export const getFooterSocialLinks = (footer) => {
 
   const items = [
     { key: "facebook", href: footer.social_facebook, label: "Facebook" },
-    { key: "instagram", href: footer.social_instagram, label: "Instagram" },
-    { key: "linkedin", href: footer.social_linkedin, label: "LinkedIn" },
     { key: "twitter", href: footer.social_twitter, label: "Twitter" },
     { key: "whatsapp", href: footer.social_whatsapp, label: "WhatsApp" },
+    { key: "pinterest", href: footer.social_pinterest, label: "Pinterest" },
+    { key: "linkedin", href: footer.social_linkedin, label: "LinkedIn" },
+    { key: "instagram", href: footer.social_instagram, label: "Instagram" },
+    { key: "youtube", href: footer.social_youtube, label: "YouTube" },
   ];
 
   return items.filter(({ href }) => {

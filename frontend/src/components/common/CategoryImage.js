@@ -12,6 +12,7 @@ const CategoryImage = ({
   priority = false,
   aspectClass = "aspect-[4/3]",
   optimizeWidth = 320,
+  roundedClass = "rounded-xl",
 }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -26,12 +27,12 @@ const CategoryImage = ({
 
   return (
     <div
-      className={`relative w-full ${aspectClass} overflow-hidden rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/80 flex-shrink-0 ${className}`}
+      className={`relative w-full ${aspectClass} overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100/80 flex-shrink-0 ${roundedClass} ${className}`}
     >
       {showPlaceholder ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-2">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center shadow-sm">
-            <FiGrid className="w-6 h-6 sm:w-7 sm:h-7 text-[#0b1d3d]/25" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm">
+            <FiGrid className="w-5 h-5 sm:w-6 sm:h-6 text-[#0b1d3d]/25" />
           </div>
           <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400 text-center line-clamp-2 px-1">
             {alt || "Category"}

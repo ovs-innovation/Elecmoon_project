@@ -53,6 +53,7 @@ export const sanitizeProduct = (product) => {
     image: sanitized.image || [],
     category: sanitized.category || { _id: null, name: { en: "Category" } },
     categories: sanitized.categories || [],
+    brand: sanitized.brand || null,
     sku: sanitized.sku || "",
     barcode: sanitized.barcode || "",
     // stock: sanitized.stock || 0,

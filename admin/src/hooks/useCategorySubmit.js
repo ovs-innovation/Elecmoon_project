@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useLocation } from "react-router-dom";
 
-//internal import
 import { SidebarContext } from "@/context/SidebarContext";
 import CategoryServices from "@/services/CategoryServices";
 import { notifyError, notifySuccess } from "@/utils/toast";
@@ -11,6 +11,9 @@ import useTranslationValue from "./useTranslationValue";
 const useCategorySubmit = (id, data) => {
   const { isDrawerOpen, closeDrawer, setIsUpdate, lang } =
     useContext(SidebarContext);
+  const location = useLocation();
+  const isSubcategoryPage = location.pathname === "/subcategories";
+
   const [resData, setResData] = useState({});
   const [checked, setChecked] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -18,7 +21,6 @@ const useCategorySubmit = (id, data) => {
   const [language, setLanguage] = useState("en");
   const [published, setPublished] = useState(true);
   const [selectCategoryName, setSelectCategoryName] = useState("");
-  const [isParentCategory, setIsParentCategory] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { handlerTextTranslateHandler } = useTranslationValue();
@@ -33,14 +35,16 @@ const useCategorySubmit = (id, data) => {
     formState: { errors },
   } = useForm();
 
-  // console.log("lang", lang, language);
-
-  // console.log("resData", resData);
-
   const onSubmit = async ({ name, description }) => {
     try {
       if (isUploading) {
         notifyError("Please wait for image uploads to finish.");
+        return;
+      }
+
+      // Categories page = always top-level; Subcategories = always needs parent
+      if (isSubcategoryPage && !checked) {
+        notifyError("Please select a parent category.");
         return;
       }
 
@@ -50,13 +54,13 @@ const useCategorySubmit = (id, data) => {
         language,
         resData?.name
       );
-      // console.log("nameTranslates", nameTranslates);
-      // return;
       const descriptionTranslates = await handlerTextTranslateHandler(
         description,
         language,
         resData?.description
       );
+
+      const asParent = !isSubcategoryPage;
 
       const categoryData = {
         name: {
@@ -67,21 +71,16 @@ const useCategorySubmit = (id, data) => {
           ...descriptionTranslates,
           [language]: description ? description : "",
         },
-        parentId: isParentCategory ? undefined : checked || undefined,
-        parentName: isParentCategory
+        parentId: asParent ? undefined : checked || undefined,
+        parentName: asParent
           ? "Home"
           : selectCategoryName
             ? selectCategoryName
             : "Home",
-
         icon: imageUrl,
         status: published ? "show" : "hide",
         lang: language,
       };
-
-      // console.log("category submit", categoryData);
-      // setIsSubmitting(false);
-      // return;
 
       if (id) {
         const res = await CategoryServices.updateCategory(id, categoryData);
@@ -104,11 +103,11 @@ const useCategorySubmit = (id, data) => {
     }
   };
 
-  const handleSelectLanguage = (lang) => {
-    setLanguage(lang);
+  const handleSelectLanguage = (langCode) => {
+    setLanguage(langCode);
     if (Object.keys(resData).length > 0) {
-      setValue("name", resData.name[lang ? lang : "en"]);
-      setValue("description", resData.description[lang ? lang : "en"]);
+      setValue("name", resData.name[langCode ? langCode : "en"]);
+      setValue("description", resData.description[langCode ? langCode : "en"]);
     }
   };
 
@@ -127,7 +126,6 @@ const useCategorySubmit = (id, data) => {
       clearErrors("parentName");
       clearErrors("description");
       setSelectCategoryName("");
-      setIsParentCategory(true);
       setLanguage(lang);
       setValue("language", language);
       setChecked("");
@@ -137,8 +135,6 @@ const useCategorySubmit = (id, data) => {
       (async () => {
         try {
           const res = await CategoryServices.getCategoryById(id);
-          // console.log("res category", res);
-
           if (res) {
             setResData(res);
             setValue("name", res.name[language ? language : "en"]);
@@ -149,18 +145,26 @@ const useCategorySubmit = (id, data) => {
             setValue("language", language);
             setValue("parentId", res.parentId);
             setValue("parentName", res.parentName);
-            setSelectCategoryName(res.parentName || "Home");
+            setSelectCategoryName(res.parentName || "");
             setChecked(res.parentId || "");
-            setIsParentCategory(!res.parentId);
             setImageUrl(res.icon);
-            setPublished(res.status === "show" ? true : false);
+            setPublished(res.status === "show");
           }
         } catch (err) {
           notifyError(err ? err.response.data.message : err.message);
         }
       })();
     }
-  }, [id, setValue, isDrawerOpen, language, clearErrors, data, lang]);
+  }, [
+    id,
+    setValue,
+    isDrawerOpen,
+    language,
+    clearErrors,
+    data,
+    lang,
+    isSubcategoryPage,
+  ]);
 
   return {
     register,
@@ -178,8 +182,6 @@ const useCategorySubmit = (id, data) => {
     isSubmitting,
     selectCategoryName,
     setSelectCategoryName,
-    isParentCategory,
-    setIsParentCategory,
     handleSelectLanguage,
   };
 };

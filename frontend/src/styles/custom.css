@@ -2,12 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --font-sans: "Source Sans 3", system-ui, sans-serif;
+    --font-display: "Outfit", system-ui, sans-serif;
+    --em-ink: #1e293b;
+    --em-muted: #64748b;
+    --em-surface: #f8fafc;
+    --em-card: #ffffff;
+    --em-line: #e2e8f0;
+    --em-brand: #ed1c24;
+    --em-navy: #0b1d3d;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--em-ink);
+    background-color: var(--em-surface);
+    letter-spacing: 0.01em;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: #0f172a;
+  }
+
+  p {
+    line-height: 1.7;
+  }
+
+  a {
+    transition: color 0.15s ease;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font-family: inherit;
+  }
+}
+
 /* Readable MRP / strikethrough price on light backgrounds */
 @layer utilities {
   .price-mrp {
     color: #6b7280;
     text-decoration: line-through;
     font-weight: 600;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
   }
 }
 

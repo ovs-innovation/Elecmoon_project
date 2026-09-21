@@ -11,9 +11,10 @@ const ProductServices = {
     variantSlug = "",
     page = "",
     limit = "",
+    brand = "",
   }) => {
     return requests.get(
-      `/products/store?category=${category}&title=${title}&slug=${slug}&variantSlug=${variantSlug}&page=${page}&limit=${limit}`
+      `/products/store?category=${category}&title=${title}&slug=${slug}&variantSlug=${variantSlug}&page=${page}&limit=${limit}&brand=${brand}`
     );
   },
   getProductsByTag: async (tag) => {

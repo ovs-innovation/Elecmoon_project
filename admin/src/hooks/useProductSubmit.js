@@ -50,6 +50,7 @@ const useProductSubmit = (id, selectedServices = []) => {
   const [isBulkUpdate, setIsBulkUpdate] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState([]);
   const [defaultCategory, setDefaultCategory] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState("");
   const [resData, setResData] = useState({});
   const [language, setLanguage] = useState("en");
   const [openModal, setOpenModal] = useState(false);
@@ -212,6 +213,7 @@ const useProductSubmit = (id, selectedServices = []) => {
             : [],
         category:
           defaultCategory && defaultCategory[0] ? defaultCategory[0]._id : "",
+        brand: selectedBrand || null,
 
         image: imageUrl || [],
         status: data.status || "show",
@@ -494,6 +496,9 @@ const useProductSubmit = (id, selectedServices = []) => {
 
             setSelectedCategory(res.categories || []);
             setDefaultCategory(res?.category ? [res.category] : []);
+            setSelectedBrand(
+              res?.brand?._id || res?.brand || ""
+            );
             setTag(JSON.parse(res.tag || "[]"));
             setImageUrl(res.image || []);
             setVariants(res.variants || []);
@@ -988,6 +993,8 @@ const useProductSubmit = (id, selectedServices = []) => {
     setSelectedCategory,
     setDefaultCategory,
     defaultCategory,
+    selectedBrand,
+    setSelectedBrand,
     handleProductSlug,
     handleSelectLanguage,
     handleIsCombination,

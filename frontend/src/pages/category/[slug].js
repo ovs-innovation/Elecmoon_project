@@ -126,26 +126,66 @@ const CategoryPage = ({
 export default CategoryPage;
 
 export const getServerSideProps = async (context) => {
-  const slug = String(context.params?.slug || "").toLowerCase();
+  const rawSlug = String(context.params?.slug || "").toLowerCase().trim();
+  const slug = rawSlug.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const fallbackId = context.query?._id
+    ? String(context.query._id)
+    : "";
 
-  if (!slug) {
+  if (!slug && !fallbackId) {
     return { notFound: true };
   }
 
   try {
     const CategoryServices = (await import("@services/CategoryServices")).default;
-    const category = await CategoryServices.getCategoryBySlug(slug);
+
+    let category = null;
+    if (slug) {
+      try {
+        category = await CategoryServices.getCategoryBySlug(slug);
+      } catch {
+        category = null;
+      }
+    }
+
+    // Fallback: resolve by Mongo id (links always include ?_id=)
+    if (!category?._id && fallbackId) {
+      try {
+        const tree = await CategoryServices.getShowingCategory();
+        const findById = (list = []) => {
+          for (const node of list) {
+            if (String(node._id) === fallbackId) return node;
+            const found = findById(node.children || []);
+            if (found) return found;
+          }
+          return null;
+        };
+        category = findById(tree || []);
+      } catch {
+        category = null;
+      }
+    }
 
     if (!category?._id) {
       return { notFound: true };
     }
 
-    const [data, attributes, catalog] = await Promise.all([
-      ProductServices.getShowingStoreProducts({
-        category: category._id,
-        page: "1",
-        limit: "60",
-      }),
+    const childIds = Array.isArray(category.children)
+      ? category.children.map((c) => c?._id || c).filter(Boolean)
+      : [];
+
+    const categoryIds = [category._id, ...childIds];
+
+    const [productBatches, attributes, catalog] = await Promise.all([
+      Promise.all(
+        categoryIds.map((catId) =>
+          ProductServices.getShowingStoreProducts({
+            category: catId,
+            page: "1",
+            limit: "60",
+          })
+        )
+      ),
       AttributeServices.getShowingAttributes({}),
       ProductServices.getShowingStoreProducts({
         page: "1",
@@ -153,17 +193,29 @@ export const getServerSideProps = async (context) => {
       }),
     ]);
 
-    const products = sanitizeData(data?.products) || [];
+    const seen = new Set();
+    const products = [];
+    for (const batch of productBatches) {
+      const list = Array.isArray(batch) ? batch : batch?.products || [];
+      for (const p of list) {
+        const pid = String(p?._id || "");
+        if (!pid || seen.has(pid)) continue;
+        seen.add(pid);
+        products.push(p);
+      }
+    }
+
+    const sanitizedProducts = sanitizeData(products) || [];
     const catalogProducts = sanitizeData(catalog?.products) || [];
     const categoryPreviewImages = buildCategoryPreviewImages(catalogProducts);
-    const featuredImage = getFeaturedProductImage(products);
+    const featuredImage = getFeaturedProductImage(sanitizedProducts);
 
     return {
       props: {
         category: sanitizeData(category),
-        slug,
+        slug: slug || category.slug || "",
         attributes: sanitizeData(attributes) || [],
-        products,
+        products: sanitizedProducts,
         categoryPreviewImages,
         featuredImage: featuredImage || null,
       },

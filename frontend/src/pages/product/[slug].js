@@ -15,7 +15,6 @@ import {
   FiTarget,
   FiShoppingBag,
   FiShare2,
-  FiDownload,
 } from "react-icons/fi";
 import { useCart } from "react-use-cart";
 import {
@@ -34,6 +33,7 @@ import { IoClose } from "react-icons/io5";
 import Tags from "@components/common/Tags";
 import Layout from "@layout/Layout";
 import ProductCard from "@components/product/ProductCard";
+import DatasheetActions from "@components/product/DatasheetActions";
 import VariantList from "@components/variants/VariantList";
 import AttributeServices from "@services/AttributeServices";
 import ProductServices from "@services/ProductServices";
@@ -545,17 +545,10 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
 
                             <Stock product={product} />
 
-                            {product?.datasheetUrl ? (
-                              <a
-                                href={product.datasheetUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 mt-3 text-[11px] font-black uppercase tracking-wide text-[#0b1d3d] border border-gray-200 hover:border-[#0b1d3d] rounded-xl px-4 py-2.5 transition-colors"
-                              >
-                                <FiDownload className="w-4 h-4" />
-                                Download Datasheet
-                              </a>
-                            ) : null}
+                            <DatasheetActions
+                              url={product?.datasheetUrl}
+                              className="mt-3"
+                            />
 
                             <div className="flex items-center gap-3 mt-4">
                               <span className="text-[10px] font-bold uppercase text-gray-500">Quantity</span>
@@ -1094,25 +1087,29 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                 )}
               </div>
 
-              {/* related products */}
+              {/* Related products — always show when available (from category / brand) */}
               {relatedProducts?.length >= 1 && (
-                <div className="pt-10 lg:pt-16 pb-10">
-                  <h3 className="leading-7 text-xl lg:text-2xl mb-6 font-extrabold font-serif text-slate-700">
-                    {t("common:relatedProducts")}
-                  </h3>
-                  <div className="flex">
-                    <div className="w-full">
-                      <div className={PRODUCT_GRID_CLASS}>
-                        {relatedProducts?.slice(0, 13).map((product, i) => (
-                          <div key={product._id} className={PRODUCT_GRID_ITEM_CLASS}>
-                          <ProductCard
-                            product={product}
-                            attributes={attributes}
-                          />
-                          </div>
-                        ))}
+                <div className="pt-10 lg:pt-14 pb-10 border-t border-gray-100 mt-8">
+                  <div className="mb-6">
+                    <p className="text-[10px] font-black text-[#ED1C24] uppercase tracking-[0.2em] mb-1">
+                      You may also like
+                    </p>
+                    <h3 className="text-xl lg:text-2xl font-black text-[#0b1d3d] tracking-tight">
+                      {t("common:relatedProducts") || "Related Products"}
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Same category &amp; similar items
+                    </p>
+                  </div>
+                  <div className={PRODUCT_GRID_CLASS}>
+                    {relatedProducts.slice(0, 12).map((related) => (
+                      <div key={related._id} className={PRODUCT_GRID_ITEM_CLASS}>
+                        <ProductCard
+                          product={related}
+                          attributes={attributes}
+                        />
                       </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -1147,18 +1144,89 @@ export const getServerSideProps = async (context) => {
 
     let product = sanitizeProduct(productData);
 
-    // Fetch related products separately or keep it empty if not needed immediately
-    // For speed, we can fetch related products based on category of the main product
-    let relatedProducts = [];
-    if (product?.category?._id) {
-      const categoryData = await ProductServices.getShowingStoreProducts({
-        category: product.category._id,
-      });
-      const products = Array.isArray(categoryData) ? categoryData : (categoryData?.products || []);
-      relatedProducts = sanitizeData(
-        products.filter((p) => p._id !== product._id).slice(0, 8)
-      );
-    }
+    // Related products: same category / categories, then brand, then latest
+    const idOf = (ref) => {
+      if (!ref) return "";
+      if (typeof ref === "string") return ref;
+      return ref._id || "";
+    };
+
+    const categoryIds = [
+      idOf(product?.category),
+      ...(Array.isArray(product?.categories)
+        ? product.categories.map(idOf)
+        : []),
+    ].filter(Boolean);
+
+    const brandId = idOf(product?.brand);
+    const excludeId = String(product?._id || "");
+
+    const collectRelated = async () => {
+      const seen = new Set([excludeId]);
+      const out = [];
+
+      const pushUnique = (list = []) => {
+        for (const p of list) {
+          const pid = String(p?._id || "");
+          if (!pid || seen.has(pid)) continue;
+          seen.add(pid);
+          out.push(p);
+          if (out.length >= 12) break;
+        }
+      };
+
+      for (const catId of [...new Set(categoryIds)]) {
+        if (out.length >= 12) break;
+        try {
+          const categoryData = await ProductServices.getShowingStoreProducts({
+            category: catId,
+            page: "1",
+            limit: "24",
+          });
+          const products = Array.isArray(categoryData)
+            ? categoryData
+            : categoryData?.products || [];
+          pushUnique(products);
+        } catch {
+          /* ignore */
+        }
+      }
+
+      if (out.length < 8 && brandId) {
+        try {
+          const brandData = await ProductServices.getShowingStoreProducts({
+            brand: brandId,
+            page: "1",
+            limit: "24",
+          });
+          const products = Array.isArray(brandData)
+            ? brandData
+            : brandData?.products || [];
+          pushUnique(products);
+        } catch {
+          /* ignore */
+        }
+      }
+
+      if (out.length < 6) {
+        try {
+          const latest = await ProductServices.getShowingStoreProducts({
+            page: "1",
+            limit: "24",
+          });
+          const products = Array.isArray(latest)
+            ? latest
+            : latest?.products || [];
+          pushUnique(products);
+        } catch {
+          /* ignore */
+        }
+      }
+
+      return sanitizeData(out.slice(0, 12)) || [];
+    };
+
+    const relatedProducts = await collectRelated();
 
     return {
       props: {

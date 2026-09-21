@@ -1,32 +1,24 @@
-import React from 'react';
-import { motion, useMotionValue, animate } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
+import { motion, useMotionValue, animate } from "framer-motion";
 
-const CountUp = ({ value, duration = 2.5, suffix = "+" }) => {
+const CountUp = ({ value, duration = 2, suffix = "+" }) => {
   const [displayValue, setDisplayValue] = useState(0);
   const count = useMotionValue(0);
 
+  useEffect(() => {
+    const controls = animate(count, value, {
+      duration,
+      ease: "easeOut",
+      onUpdate: (latest) => setDisplayValue(Math.floor(latest)),
+    });
+    return () => controls.stop();
+  }, [count, value, duration]);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ 
-        opacity: 1, 
-        y: 0,
-        transition: { duration: 0.6 }
-      }}
-      viewport={{ once: true, amount: 0.5 }}
-      onViewportEnter={() => {
-        const controls = animate(count, value, {
-          duration: duration,
-          ease: "easeOut",
-          onUpdate: (latest) => setDisplayValue(Math.floor(latest))
-        });
-        return controls.stop;
-      }}
-      className="text-4xl md:text-5xl lg:text-7xl font-bold tracking-tighter text-[#4FC3F7]"
-    >
-      {displayValue.toLocaleString()}{suffix}
-    </motion.div>
+    <span className="tabular-nums">
+      {displayValue.toLocaleString()}
+      {suffix}
+    </span>
   );
 };
 
@@ -39,27 +31,34 @@ const StatsBar = () => {
   ];
 
   return (
-    <div className="w-full bg-white py-12 lg:py-20 border-t border-gray-100 relative overflow-hidden">
-      {/* Decorative Top Accent Bar */}
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#0b1d3d] via-[#1a365d] to-[#0b1d3d]"></div>
-      
-      <div className="max-w-screen-2xl mx-auto px-4 lg:px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 text-center">
+    <section className="w-full bg-white border-t border-slate-100">
+      <div className="max-w-screen-2xl mx-auto px-5 sm:px-8 lg:px-12 xl:px-16 py-10 sm:py-12 lg:py-14">
+        <div className="grid grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
-            <div key={index} className="flex flex-col items-center justify-center space-y-2">
-              <CountUp value={stat.value} />
-              <span className="text-gray-500 font-bold text-sm lg:text-lg uppercase tracking-widest opacity-80">
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.45, delay: index * 0.08 }}
+              className={[
+                "flex flex-col items-center justify-center text-center px-4 sm:px-6 py-6 lg:py-2",
+                index % 2 === 1 ? "border-l border-slate-200" : "",
+                index >= 2 ? "border-t border-slate-200 lg:border-t-0" : "",
+                index > 0 ? "lg:border-l lg:border-slate-200" : "",
+              ].join(" ")}
+            >
+              <p className="text-3xl sm:text-4xl lg:text-[42px] font-bold tracking-tight text-[#0b1d3d] leading-none">
+                <CountUp value={stat.value} />
+              </p>
+              <p className="mt-2.5 text-[11px] sm:text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
                 {stat.label}
-              </span>
-            </div>
+              </p>
+            </motion.div>
           ))}
         </div>
       </div>
-
-      {/* Subtle Background Glow */}
-      <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-[#4FC3F7] opacity-[0.03] blur-[100px] rounded-full pointer-events-none"></div>
-      <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#0b1d3d] opacity-[0.03] blur-[100px] rounded-full pointer-events-none"></div>
-    </div>
+    </section>
   );
 };
 

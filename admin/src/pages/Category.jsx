@@ -14,8 +14,6 @@ import { useContext, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiEdit, FiPlus, FiTrash2 } from "react-icons/fi";
 
-//internal import
-
 import useAsync from "@/hooks/useAsync";
 import { SidebarContext } from "@/context/SidebarContext";
 import CategoryServices from "@/services/CategoryServices";
@@ -27,42 +25,31 @@ import PageTitle from "@/components/Typography/PageTitle";
 import MainDrawer from "@/components/drawer/MainDrawer";
 import CategoryDrawer from "@/components/drawer/CategoryDrawer";
 import UploadMany from "@/components/common/UploadMany";
-import SwitchToggleChildCat from "@/components/form/switch/SwitchToggleChildCat";
 import TableLoading from "@/components/preloader/TableLoading";
 import CheckBox from "@/components/form/others/CheckBox";
 import CategoryTable from "@/components/category/CategoryTable";
 import NotFound from "@/components/table/NotFound";
 import AnimatedContent from "@/components/common/AnimatedContent";
-import {
-  getAdminRootCategories,
-  flattenCategoryTree,
-} from "@/utils/categoryAdmin";
+import { getAdminRootCategories } from "@/utils/categoryAdmin";
 
 const Category = () => {
   const { toggleDrawer, lang } = useContext(SidebarContext);
-
   const { data, loading, error } = useAsync(CategoryServices.getAllCategory);
   const { data: getAllCategories } = useAsync(
     CategoryServices.getAllCategories
   );
-
   const { handleDeleteMany, allId, handleUpdateMany, serviceId } =
     useToggleDrawer();
-
   const { t } = useTranslation();
 
   const [isCheckAll, setIsCheckAll] = useState(false);
   const [isCheck, setIsCheck] = useState([]);
-  const [showChild, setShowChild] = useState(true);
 
-  const categorySource = useMemo(() => {
-    if (showChild) {
-      // Always use tree data for display so _parentLabel is computed
-      // from the actual tree structure — not the stale stored parentName field.
-      return flattenCategoryTree(data || []);
-    }
-    return getAdminRootCategories(data || []);
-  }, [data, showChild]);
+  // Always top-level only — no Parent only / All toggle
+  const categorySource = useMemo(
+    () => getAdminRootCategories(data || []),
+    [data]
+  );
 
   const {
     handleSubmitCategory,
@@ -83,22 +70,17 @@ const Category = () => {
   const handleSelectAll = () => {
     setIsCheckAll(!isCheckAll);
     setIsCheck(categorySource.map((li) => li._id));
-    if (isCheckAll) {
-      setIsCheck([]);
-    }
+    if (isCheckAll) setIsCheck([]);
   };
 
-  // handle reset field function
   const handleResetField = () => {
     setCategoryType("");
     categoryRef.current.value = "";
   };
 
-  // console.log("serviceData", serviceData, "tableData", dataTable);
-
   return (
     <>
-      <PageTitle>{t("Category")}</PageTitle>
+      <PageTitle>Categories</PageTitle>
       <DeleteModal ids={allId} setIsCheck={setIsCheck} />
 
       <BulkActionDrawer
@@ -115,13 +97,11 @@ const Category = () => {
 
       <AnimatedContent>
         <Card className="min-w-0 shadow-xs overflow-hidden bg-white dark:bg-gray-800 mb-5">
-          <CardBody className="">
-            {/* <div className="flex md:flex-row flex-col gap-3 justify-end items-end"> */}
+          <CardBody>
             <form
               onSubmit={handleSubmitCategory}
-              className="py-3  grid gap-4 lg:gap-6 xl:gap-6  xl:flex"
+              className="py-3 grid gap-4 lg:gap-6 xl:gap-6 xl:flex"
             >
-              {/* </div> */}
               <div className="flex justify-start w-1/2 xl:w-1/2 md:w-full">
                 <UploadMany
                   title="Categories"
@@ -134,7 +114,7 @@ const Category = () => {
                 />
               </div>
 
-              <div className="lg:flex  md:flex xl:justify-end xl:w-1/2  md:w-full md:justify-start flex-grow-0">
+              <div className="lg:flex md:flex xl:justify-end xl:w-1/2 md:w-full md:justify-start flex-grow-0">
                 <div className="w-full md:w-40 lg:w-40 xl:w-40 mr-3 mb-3 lg:mb-0">
                   <Button
                     disabled={isCheck.length < 1}
@@ -144,20 +124,18 @@ const Category = () => {
                     <span className="mr-2">
                       <FiEdit />
                     </span>
-
                     {t("BulkAction")}
                   </Button>
                 </div>
-                <div className="w-full md:w-32 lg:w-32 xl:w-32  mr-3 mb-3 lg:mb-0">
+                <div className="w-full md:w-32 lg:w-32 xl:w-32 mr-3 mb-3 lg:mb-0">
                   <Button
                     disabled={isCheck.length < 1}
                     onClick={() => handleDeleteMany(isCheck)}
-                    className="w-full rounded-md h-12 bg-red-500 disabled  btn-red"
+                    className="w-full rounded-md h-12 bg-red-500 btn-red"
                   >
                     <span className="mr-2">
                       <FiTrash2 />
                     </span>
-
                     {t("Delete")}
                   </Button>
                 </div>
@@ -169,16 +147,19 @@ const Category = () => {
                     <span className="mr-2">
                       <FiPlus />
                     </span>
-
-                    {t("AddCategory")}
+                    Add Category
                   </Button>
                 </div>
               </div>
             </form>
+            <p className="text-xs text-gray-500 -mt-1 mb-1">
+              Main menu items for All Departments. Subcategories add karne ke
+              liye Catalog → Subcategories use karo.
+            </p>
           </CardBody>
         </Card>
 
-        <Card className="min-w-0 shadow-xs overflow-hidden bg-white dark:bg-gray-800 rounded-t-lg rounded-0 mb-4">
+        <Card className="min-w-0 shadow-xs overflow-hidden bg-white dark:bg-gray-800 rounded-t-lg mb-4">
           <CardBody>
             <form
               onSubmit={handleSubmitCategory}
@@ -197,7 +178,6 @@ const Category = () => {
                     Filter
                   </Button>
                 </div>
-
                 <div className="w-full mx-1">
                   <Button
                     layout="outline"
@@ -214,14 +194,8 @@ const Category = () => {
         </Card>
       </AnimatedContent>
 
-      <SwitchToggleChildCat
-        title=" "
-        handleProcess={setShowChild}
-        processOption={showChild}
-        name={showChild}
-      />
       {loading ? (
-        <TableLoading row={12} col={6} width={190} height={20} />
+        <TableLoading row={12} col={5} width={190} height={20} />
       ) : error ? (
         <span className="text-center mx-auto text-red-500">{error}</span>
       ) : serviceData?.length !== 0 ? (
@@ -238,11 +212,9 @@ const Category = () => {
                     isChecked={isCheckAll}
                   />
                 </TableCell>
-
                 <TableCell>{t("catIdTbl")}</TableCell>
                 <TableCell>{t("catIconTbl")}</TableCell>
                 <TableCell>{t("CatTbName")}</TableCell>
-                <TableCell>Parent</TableCell>
                 <TableCell className="text-center">
                   {t("catPublishedTbl")}
                 </TableCell>
@@ -251,17 +223,16 @@ const Category = () => {
                 </TableCell>
               </tr>
             </TableHeader>
-
             <CategoryTable
               data={data}
               lang={lang}
               isCheck={isCheck}
               categories={dataTable}
               setIsCheck={setIsCheck}
-              showChild={showChild}
+              showChild={false}
+              showParentColumn={false}
             />
           </Table>
-
           <TableFooter>
             <Pagination
               totalResults={totalResults}

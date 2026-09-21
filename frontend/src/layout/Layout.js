@@ -44,7 +44,7 @@ const Layout = ({ title, description, children }) => {
       />
       <RouteProgressBar />
 
-      <div className="font-sans overflow-x-hidden">
+      <div className="font-sans overflow-x-hidden text-slate-800 antialiased">
         <Head>
           <title>
             {title
@@ -64,19 +64,19 @@ const Layout = ({ title, description, children }) => {
         </Head>
         <Navbar />
         <CartDrawer />
-        <div className="bg-gray-50">{children}</div>
+        <div className="bg-slate-50">{children}</div>
         {/* Floating action buttons */}
         <div className="fixed right-3 sm:right-4 md:right-6 bottom-20 sm:bottom-24 flex flex-col gap-2 sm:gap-3 z-30 pointer-events-none">
           <a
             href={phone ? `tel:${phone}` : undefined}
-            className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-red-600 text-white flex items-center justify-center shadow-lg hover:bg-red-700 transition pointer-events-auto"
+            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#ED1C24] text-white flex items-center justify-center shadow-lg hover:bg-[#d41820] transition pointer-events-auto"
             aria-label="Call Elecmoon"
           >
             <FiPhoneCall className="w-5 h-5 sm:w-6 sm:h-6" />
           </a>
           <button
             onClick={handleScrollTop}
-            className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg bg-red-600 text-white flex items-center justify-center shadow-lg hover:bg-red-700 transition pointer-events-auto"
+            className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#ED1C24] text-white flex items-center justify-center shadow-lg hover:bg-[#d41820] transition pointer-events-auto"
             aria-label="Back to top"
             type="button"
           >
@@ -86,9 +86,7 @@ const Layout = ({ title, description, children }) => {
         <MobileFooter />
         {router.pathname === "/" && <StatsBar />}
         <div className="w-full">
-          <div className="border-t border-gray-100 w-full">
-            <Footer />
-          </div>
+          <Footer />
         </div>
       </div>
     </>

@@ -50,6 +50,14 @@ const sidebar = [
         name: "Categories",
       },
       {
+        path: "/subcategories",
+        name: "Subcategories",
+      },
+      {
+        path: "/brands",
+        name: "Brands",
+      },
+      {
         path: "/services",
         name: "Services",
       },

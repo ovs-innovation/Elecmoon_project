@@ -156,12 +156,28 @@ const ProductDetails = () => {
                 </p>
               ) : null}
               {data?.datasheetUrl ? (
-                <p className="mb-3">
+                <p className="mb-3 flex flex-wrap gap-3">
                   <a
                     href={data.datasheetUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-semibold text-green-600 hover:underline"
+                  >
+                    View Datasheet
+                  </a>
+                  <a
+                    href={
+                      data.datasheetUrl.includes("/upload/")
+                        ? data.datasheetUrl.replace(
+                            "/upload/",
+                            "/upload/fl_attachment/"
+                          )
+                        : data.datasheetUrl
+                    }
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    download
+                    className="text-sm font-semibold text-blue-600 hover:underline"
                   >
                     Download Datasheet (PDF)
                   </a>

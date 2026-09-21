@@ -119,8 +119,9 @@ const getProductBySlug = async (req, res) => {
   // console.log("slug", req.params.slug);
   try {
     const product = await Product.findOne({ slug: req.params.slug, status: "show" })
-      .populate({ path: "category", select: "_id name" })
-      .populate({ path: "categories", select: "_id name" });
+      .populate({ path: "category", select: "_id name slug" })
+      .populate({ path: "categories", select: "_id name slug" })
+      .populate({ path: "brand", select: "_id name slug" });
     // Return null if not found or unpublished — frontend will redirect gracefully
     res.send(product || null);
   } catch (err) {
@@ -132,11 +133,12 @@ const getProductBySlug = async (req, res) => {
 
 const getProductById = async (req, res) => {
   try {
-    const product = await Product.findOne({ _id: req.params.id, status: "show" })
-      .populate({ path: "category", select: "_id, name" })
-      .populate({ path: "categories", select: "_id name" });
+    const product = await Product.findOne({ _id: req.params.id })
+      .populate({ path: "category", select: "_id name" })
+      .populate({ path: "categories", select: "_id name" })
+      .populate({ path: "brand", select: "_id name slug" });
 
-    // Return null if not found or unpublished — frontend will redirect gracefully
+    // Return null if not found — frontend will redirect gracefully
     res.send(product || null);
   } catch (err) {
     res.status(500).send({
@@ -171,6 +173,7 @@ const updateProduct = async (req, res) => {
       product.slug = req.body.slug;
       product.categories = req.body.categories;
       product.category = req.body.category;
+      product.brand = req.body.brand || null;
       product.status = req.body.status || req.body.show;
       product.isCombination = req.body.isCombination;
       product.variants = req.body.variants;
@@ -306,7 +309,7 @@ const deleteProduct = (req, res) => {
 
 const getShowingStoreProducts = async (req, res) => {
   try {
-    const { category, slug, variantSlug, title, page, limit } = req.query;
+    const { category, slug, variantSlug, title, page, limit, brand } = req.query;
     let queryObject = { status: "show" };
     const andConditions = [];
 
@@ -314,6 +317,10 @@ const getShowingStoreProducts = async (req, res) => {
       andConditions.push({
         $or: [{ category: category }, { categories: category }],
       });
+    }
+
+    if (brand) {
+      andConditions.push({ brand: brand });
     }
 
     if (title) {
@@ -340,7 +347,9 @@ const getShowingStoreProducts = async (req, res) => {
     const limits = Number(limit) || 60;
     const skip = (pages - 1) * limits;
 
-    const shouldPaginateList = Boolean((category || title) && !slug && !variantSlug);
+    const shouldPaginateList = Boolean(
+      (category || title || brand) && !slug && !variantSlug
+    );
 
     const baseQuery = Product.find(queryObject)
       .select(

@@ -9,6 +9,8 @@ const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Attributes = lazy(() => import("@/pages/Attributes"));
 const ChildAttributes = lazy(() => import("@/pages/ChildAttributes"));
 const Category = lazy(() => import("@/pages/Category"));
+const Subcategories = lazy(() => import("@/pages/Subcategories"));
+const Brands = lazy(() => import("@/pages/Brands"));
 const Services = lazy(() => import("@/pages/Services"));
 const ChildCategory = lazy(() => import("@/pages/ChildCategory"));
 const Staff = lazy(() => import("@/pages/Staff"));
@@ -57,6 +59,14 @@ const routes = [
   {
     path: "/categories",
     component: Category,
+  },
+  {
+    path: "/subcategories",
+    component: Subcategories,
+  },
+  {
+    path: "/brands",
+    component: Brands,
   },
   {
     path: "/services",
