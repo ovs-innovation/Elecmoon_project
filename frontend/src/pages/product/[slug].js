@@ -2,7 +2,7 @@ import useTranslation from "next-translate/useTranslation";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useMemo } from "react";
 import {
   FiChevronRight,
   FiZap,
@@ -66,6 +66,7 @@ import Stock from "@components/common/Stock";
 import { isInStock } from "@utils/inventory";
 import Uploader from "@components/image-uploader/Uploader";
 import { UserContext } from "@context/UserContext";
+import { SidebarContext } from "@context/SidebarContext";
 
 const ProductScreen = ({ product, attributes, relatedProducts }) => {
   const router = useRouter();
@@ -299,6 +300,7 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
   };
 
   const { t } = useTranslation();
+  const { categoryTree } = useContext(SidebarContext);
 
   // category name for display
   const category_name = product?.category?.name
@@ -313,6 +315,41 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
         product?.category?.slug
       )
     : "/search";
+
+  // Determine parent category and subcategory relationships for breadcrumbs
+  const { parentCategory, parentCategoryName, parentCategoryUrl } = useMemo(() => {
+    if (!product?.category) {
+      return { parentCategory: null, parentCategoryName: "", parentCategoryUrl: "" };
+    }
+    const catId = String(product.category._id || product.category);
+
+    for (const parent of categoryTree || []) {
+      const child = (parent.children || []).find((c) => String(c._id) === catId);
+      if (child) {
+        const pName = showingTranslateValue(parent.name);
+        return {
+          parentCategory: parent,
+          parentCategoryName: pName,
+          parentCategoryUrl: getCategorySearchUrl(parent._id, pName, parent.slug),
+        };
+      }
+    }
+
+    if (product.category?.parentId || product.category?.parentName) {
+      const pName = typeof product.category.parentName === "object"
+        ? showingTranslateValue(product.category.parentName)
+        : String(product.category.parentName || "");
+      if (pName) {
+        return {
+          parentCategory: { _id: product.category.parentId, name: pName },
+          parentCategoryName: pName,
+          parentCategoryUrl: getCategorySearchUrl(product.category.parentId, pName),
+        };
+      }
+    }
+
+    return { parentCategory: null, parentCategoryName: "", parentCategoryUrl: "" };
+  }, [product?.category, categoryTree, showingTranslateValue]);
 
   return (
     <>
@@ -378,22 +415,34 @@ const ProductScreen = ({ product, attributes, relatedProducts }) => {
                   <li className="text-sm pr-1 transition duration-200 ease-in cursor-pointer hover:text-[#EF4036] font-semibold">
                     <Link href="/">Home</Link>
                   </li>
-                  <li className="text-sm mt-[1px]">
-
+                  {parentCategory && parentCategoryName ? (
+                    <>
+                      <li className="text-sm mt-[1px] text-gray-400">
+                        <FiChevronRight />
+                      </li>
+                      <li className="text-sm px-1 transition duration-200 ease-in cursor-pointer hover:text-[#EF4036] font-semibold">
+                        <Link href={parentCategoryUrl}>
+                          {parentCategoryName}
+                        </Link>
+                      </li>
+                    </>
+                  ) : null}
+                  {category_name ? (
+                    <>
+                      <li className="text-sm mt-[1px] text-gray-400">
+                        <FiChevronRight />
+                      </li>
+                      <li className="text-sm px-1 transition duration-200 ease-in cursor-pointer hover:text-[#EF4036] font-semibold">
+                        <Link href={categoryUrl}>
+                          {category_name}
+                        </Link>
+                      </li>
+                    </>
+                  ) : null}
+                  <li className="text-sm mt-[1px] text-gray-400">
                     <FiChevronRight />
                   </li>
-                  <li className="text-sm pl-1 transition duration-200 ease-in cursor-pointer hover:text-[#EF4036] font-semibold ">
-                    <Link href={categoryUrl}>
-                      <button type="button">
-                        {category_name}
-                      </button>
-                    </Link>
-                  </li>
-                  <li className="text-sm mt-[1px]">
-
-                    <FiChevronRight />
-                  </li>
-                  <li className="text-sm px-1 transition duration-200 ease-in truncate max-w-[40vw] sm:max-w-none">
+                  <li className="text-sm px-1 transition duration-200 ease-in truncate max-w-[40vw] sm:max-w-none text-gray-600 font-medium">
                     {showingTranslateValue(selectVariant?.title) ||
                       showingTranslateValue(product?.title)}
                   </li>

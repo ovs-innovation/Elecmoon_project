@@ -59,6 +59,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [mobileCategoriesOpen, setMobileCategoriesOpen] = useState(false);
+  const [mobileExpandedCatId, setMobileExpandedCatId] = useState(null);
   const [mobileBrandsOpen, setMobileBrandsOpen] = useState(false);
   const [mobileBrands, setMobileBrands] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -578,16 +579,66 @@ const Navbar = () => {
                   <div className="ml-2 pl-2 border-l-2 border-gray-100 space-y-1">
                     {categories.map((cat) => {
                       const catName = showingTranslateValue(cat.name);
+                      const hasKids = (cat.children || []).length > 0;
+                      const isExpanded = mobileExpandedCatId === cat._id;
                       return (
-                        <Link
-                          key={cat._id}
-                          href={getCategorySearchUrl(cat._id, catName, cat.slug)}
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center justify-between px-4 py-2.5 rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:text-[#0b1d3d] transition-all group"
-                        >
-                          {catName}
-                          <FiChevronRight className="w-3 h-3 text-gray-200 group-hover:text-[#ED1C24]" />
-                        </Link>
+                        <div key={cat._id} className="space-y-0.5">
+                          {hasKids ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setMobileExpandedCatId(isExpanded ? null : cat._id)
+                              }
+                              className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-[12px] font-bold text-gray-700 hover:bg-gray-50 hover:text-[#0b1d3d] transition-all text-left"
+                            >
+                              <span>{catName}</span>
+                              <FiChevronDown
+                                className={`w-3.5 h-3.5 text-gray-400 transition-transform ${
+                                  isExpanded ? "rotate-180 text-[#ED1C24]" : ""
+                                }`}
+                              />
+                            </button>
+                          ) : (
+                            <Link
+                              href={getCategorySearchUrl(cat._id, catName, cat.slug)}
+                              onClick={() => setMobileMenuOpen(false)}
+                              className="flex items-center justify-between px-4 py-2.5 rounded-lg text-[12px] font-bold text-gray-600 hover:bg-gray-50 hover:text-[#0b1d3d] transition-all group"
+                            >
+                              <span>{catName}</span>
+                              <FiChevronRight className="w-3 h-3 text-gray-200 group-hover:text-[#ED1C24]" />
+                            </Link>
+                          )}
+
+                          {hasKids && isExpanded && (
+                            <div className="ml-3 pl-2 border-l-2 border-red-100 space-y-1 py-1">
+                              <Link
+                                href={getCategorySearchUrl(cat._id, catName, cat.slug)}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="block px-3 py-1.5 text-[11px] font-black text-[#ED1C24] uppercase tracking-wider hover:underline"
+                              >
+                                View All {catName} Products →
+                              </Link>
+                              {cat.children.map((child) => {
+                                const cName = showingTranslateValue(child.name);
+                                return (
+                                  <Link
+                                    key={child._id}
+                                    href={getCategorySearchUrl(
+                                      child._id,
+                                      cName,
+                                      child.slug
+                                    )}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="flex items-center justify-between px-3 py-1.5 rounded text-[12px] font-medium text-gray-600 hover:text-[#0b1d3d] hover:bg-gray-50"
+                                  >
+                                    <span>{cName}</span>
+                                    <FiChevronRight className="w-3 h-3 text-gray-300" />
+                                  </Link>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
                     <Link

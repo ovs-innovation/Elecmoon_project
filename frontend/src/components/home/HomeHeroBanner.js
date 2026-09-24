@@ -175,7 +175,7 @@ const HomeHeroBanner = () => {
   return (
     <section className="relative w-full font-sans bg-white overflow-x-clip lg:overflow-visible">
       <div className="max-w-screen-2xl mx-auto px-0 sm:px-3 lg:px-8">
-        <div className="relative flex items-stretch min-h-[320px] sm:min-h-[340px] lg:h-[400px] lg:min-h-0 overflow-visible">
+        <div className="relative flex items-stretch min-h-[320px] sm:min-h-[340px] lg:h-[385px] xl:h-[395px] lg:min-h-0 overflow-visible">
           <DepartmentsSidebar />
 
           <div className="relative flex-1 min-w-0 min-h-[320px] sm:min-h-[340px] lg:h-full overflow-hidden border border-gray-200 lg:border-l-0 z-10">

@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { FiArrowRight } from "react-icons/fi";
 import CategoryImage from "@components/common/CategoryImage";
 import { getCategoryCardImage } from "@utils/categoryDisplayImage";
+import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const CategoryCard = ({
   category,
@@ -15,6 +17,10 @@ const CategoryCard = ({
   fromProduct = false,
   compact = false,
 }) => {
+  const { showingTranslateValue } = useUtilsFunction();
+  const desc = category?.description ? showingTranslateValue(category.description) : "";
+  const kidsCount = (category?.children || []).length;
+
   const displayImage =
     imageSrc || getCategoryCardImage(category, {}) || category?.icon;
 
@@ -58,28 +64,35 @@ const CategoryCard = ({
         />
       </div>
 
-      <div className="mt-3 w-full px-0.5">
+      <div className="mt-2.5 w-full px-0.5">
         <h3
           className={`text-[11px] sm:text-xs font-bold leading-snug line-clamp-2 transition-colors duration-200 ${
             isActive
               ? "text-[#0b1d3d]"
               : "text-gray-800 group-hover:text-[#0b1d3d]"
           }`}
+          title={name}
         >
           {name}
         </h3>
+        {desc ? (
+          <p className="mt-0.5 text-[9.5px] text-gray-400 line-clamp-1">
+            {desc}
+          </p>
+        ) : null}
         {showExplore ? (
-          <p
-            className={`mt-0.5 text-[9px] font-semibold uppercase tracking-wider transition-colors duration-200 ${
-              compact ? "hidden sm:block" : ""
+          <div
+            className={`mt-1 inline-flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wider transition-colors duration-200 ${
+              compact ? "hidden sm:inline-flex" : ""
             } ${
               isActive
                 ? "text-[#ED1C24]"
-                : "text-gray-400 group-hover:text-[#ED1C24]/80"
+                : "text-gray-400 group-hover:text-[#ED1C24]"
             }`}
           >
-            Explore
-          </p>
+            <span>{kidsCount > 0 ? `${kidsCount} Types` : "Explore"}</span>
+            <FiArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+          </div>
         ) : null}
         {fromProduct ? (
           <span className="sr-only">Live product preview</span>

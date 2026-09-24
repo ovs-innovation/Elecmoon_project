@@ -4,6 +4,7 @@ import { FiChevronRight, FiPackage } from "react-icons/fi";
 import useUtilsFunction from "@hooks/useUtilsFunction";
 import CategoryImage from "@components/common/CategoryImage";
 import { getCategoryCardImage } from "@utils/categoryDisplayImage";
+import { getCategorySearchUrl } from "@utils/categoryUrl";
 
 const DESCRIPTION_PREVIEW = 160;
 
@@ -42,6 +43,17 @@ const CategoryPageHeader = ({
           Products
         </Link>
         <FiChevronRight className="w-3 h-3 flex-shrink-0" />
+        {category?.parentName ? (
+          <>
+            <Link
+              href={getCategorySearchUrl(category.parentId, category.parentName)}
+              className="hover:text-[#ED1C24] transition-colors"
+            >
+              {category.parentName}
+            </Link>
+            <FiChevronRight className="w-3 h-3 flex-shrink-0" />
+          </>
+        ) : null}
         <span className="text-gray-600 font-semibold truncate max-w-[200px] sm:max-w-none">
           {categoryTitle}
         </span>
