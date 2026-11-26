@@ -1,5 +1,5 @@
 import { Select } from "@windmill/react-ui";
-import React from "react";
+import React, { useMemo } from "react";
 import Scrollbars from "react-custom-scrollbars-2";
 import { useLocation } from "react-router-dom";
 
@@ -38,15 +38,6 @@ const CategoryDrawer = ({ id, data }) => {
 
   const { showingTranslateValue } = useUtilsFunction();
 
-  // Only top-level categories as parent options
-  const parentOptions = (data || [])
-    .filter((c) => !c.parentId)
-    .map((category) => ({
-      _id: category._id,
-      name: showingTranslateValue(category.name),
-    }))
-    .filter((c) => c.name);
-
   const findObject = (categories, target) => {
     for (const category of categories || []) {
       if (category._id === target) return category;
@@ -56,6 +47,40 @@ const CategoryDrawer = ({ id, data }) => {
     return undefined;
   };
 
+  const isDescendant = (node, targetId) => {
+    if (!node || !node.children) return false;
+    for (const child of node.children) {
+      if (child._id === targetId || isDescendant(child, targetId)) return true;
+    }
+    return false;
+  };
+
+  // Build recursive flat list for multi-level category hierarchy (category > subcategory > sub-sub)
+  const buildOptions = (cats, depth = 0, prefix = "") => {
+    let opts = [];
+    for (const cat of cats || []) {
+      const name = showingTranslateValue(cat.name) || (typeof cat.name === "string" ? cat.name : cat.name?.en || "");
+      if (!name) continue;
+      const label = depth === 0 ? name : `${prefix} › ${name}`;
+      opts.push({
+        _id: cat._id,
+        name: label,
+        depth,
+      });
+      if (cat.children && cat.children.length > 0) {
+        opts = opts.concat(buildOptions(cat.children, depth + 1, label));
+      }
+    }
+    return opts;
+  };
+
+  const parentOptions = useMemo(() => {
+    const all = buildOptions(data || []);
+    if (!id) return all;
+    const current = findObject(data, id);
+    return all.filter((opt) => opt._id !== id && !isDescendant(current, opt._id));
+  }, [data, id]);
+
   const handleSelect = async (key) => {
     if (!key || key === "home") {
       setChecked("");
@@ -63,18 +88,8 @@ const CategoryDrawer = ({ id, data }) => {
       return;
     }
 
-    if (id) {
-      if (id === key) {
-        return notifyError("Cannot select itself as parent.");
-      }
-      try {
-        const parentDoc = await CategoryServices.getCategoryById(key);
-        if (id === parentDoc?.parentId) {
-          return notifyError("Invalid parent selection.");
-        }
-      } catch {
-        /* ignore */
-      }
+    if (id && id === key) {
+      return notifyError("Cannot select itself as parent.");
     }
 
     setChecked(key);

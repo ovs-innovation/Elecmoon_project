@@ -40,7 +40,7 @@
     font-family: var(--font-display);
     line-height: 1.25;
     letter-spacing: -0.02em;
-    color: #0f172a;
+    color: inherit;
   }
 
   p {

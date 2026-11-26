@@ -30,10 +30,11 @@ const useLoginSubmit = () => {
         if (res) {
           notifySuccess("Login Success!");
           dispatch({ type: "USER_LOGIN", payload: res });
+          const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
           Cookies.set("adminInfo", JSON.stringify(res), {
             expires: cookieTimeOut,
-            sameSite: "None",
-            secure: true,
+            sameSite: isHttps ? "None" : "Lax",
+            secure: isHttps,
           });
           history.replace("/dashboard");
         }
@@ -50,10 +51,11 @@ const useLoginSubmit = () => {
         if (res) {
           notifySuccess("Register Success!");
           dispatch({ type: "USER_LOGIN", payload: res });
+          const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
           Cookies.set("adminInfo", JSON.stringify(res), {
             expires: cookieTimeOut,
-            sameSite: "None",
-            secure: true,
+            sameSite: isHttps ? "None" : "Lax",
+            secure: isHttps,
           });
           history.replace("/");
         }

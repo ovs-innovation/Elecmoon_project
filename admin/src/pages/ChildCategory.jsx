@@ -73,17 +73,27 @@ const ChildCategory = () => {
           );
     };
 
-    if (!loading) {
-      const result = findChildArray(data[0], id);
-      const res = getAncestors(id, data[0]?.children);
+    if (!loading && Array.isArray(data)) {
+      let result = null;
+      let res = null;
+      for (const root of data) {
+        const found = findChildArray(root, id);
+        if (found) {
+          result = found;
+          res = getAncestors(id, [root]);
+          break;
+        }
+      }
 
       if (result?.children?.length > 0) {
         setChildCategory(result?.children);
-        setSelectObj(res);
+        setSelectObj(res || []);
+      } else {
+        setChildCategory([]);
+        setSelectObj(res || []);
       }
-      // console.log("result", result, "res", res);
     }
-  }, [id, loading, data, childCategory]);
+  }, [id, loading, data]);
 
   const {
     totalResults,

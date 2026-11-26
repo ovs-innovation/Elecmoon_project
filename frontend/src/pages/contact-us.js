@@ -7,13 +7,13 @@ import LeadServices from "@services/LeadServices";
 import { FiClock, FiMapPin, FiPhoneCall, FiMail } from "react-icons/fi";
 
 const services = [
-  "Electrical Testing & Tagging",
-  "Fire Extinguishers",
-  "RCD/Safety Switches",
-  "Three Phase Testing",
-  "Microwave Testing",
-  "Emergency Exit Light Testing",
-  "Smoke Alarm Service",
+  "Lithium-Ion Battery Materials & Cells",
+  "BMS & Protection Solutions",
+  "Battery Pack Assembly & Testing",
+  "Spot Welding & Machine Equipment",
+  "Electronic Components & Switches",
+  "Wholesale & Bulk Supply Enquiry",
+  "Custom Technical Solutions",
 ];
 
 const ContactUs = () => {
@@ -44,18 +44,26 @@ const ContactUs = () => {
   };
 
   return (
-    <Layout title="Contact Us" description="Get in touch with Elecmoon">
-      <div className="relative bg-[#111] text-white min-h-[380px] sm:min-h-[380px] lg:min-h-[420px]">
-        <Image
-          src="https://www.Elecmoon.com.au/wp-content/uploads/al_opt_content/IMAGE/www.Elecmoon.com.au/wp-content/uploads/2025/02/Microwave-Testing.jpg.bv.webp"
-          alt="Hero background"
-          fill
-          className="object-cover opacity-40"
-          priority
-        />
-        <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-10 py-24 lg:py-32 text-center">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6">Contact Us</h1>
-          <div className="w-40 h-0.5 bg-white mx-auto" />
+    <Layout title="Contact Us" description="Get in touch with Elecmoon for electronic components and battery solutions">
+      {/* Hero Section */}
+      <div className="relative bg-[#0b1d3d] text-white py-16 lg:py-24 overflow-hidden border-b border-white/5">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-1/3 h-full bg-red-500/10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+
+        <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-10 text-center">
+          <div className="inline-flex items-center gap-2 text-[11px] font-bold text-white/70 uppercase tracking-widest mb-4 bg-white/10 px-4 py-1.5 rounded-full border border-white/15 backdrop-blur-sm">
+            <span>Home</span>
+            <span>/</span>
+            <span className="text-[#ED1C24]">Contact Us</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black !text-white mb-4 tracking-tight">
+            Contact <span className="text-[#ED1C24]">Us</span>
+          </h1>
+          <div className="w-20 h-1 bg-[#ED1C24] mx-auto mb-4 rounded-full" />
+          <p className="text-white/80 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+            Have questions about electronic components, lithium-ion battery solutions, or custom orders? Reach out to our team today.
+          </p>
         </div>
       </div>
 

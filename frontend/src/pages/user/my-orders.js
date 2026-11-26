@@ -34,7 +34,7 @@ const MyOrders = () => {
       }),
   });
 
-  const pageCount = Math.ceil(data?.totalDoc / 8);
+  const pageCount = Math.ceil((data?.totalDoc || 0) / 10);
 
   useEffect(() => {
     setIsLoading(false);

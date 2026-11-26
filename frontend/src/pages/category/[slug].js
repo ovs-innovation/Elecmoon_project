@@ -170,11 +170,21 @@ export const getServerSideProps = async (context) => {
       return { notFound: true };
     }
 
-    const childIds = Array.isArray(category.children)
-      ? category.children.map((c) => c?._id || c).filter(Boolean)
-      : [];
+    const collectDescendantIds = (node) => {
+      let ids = [];
+      if (!node) return ids;
+      const list = Array.isArray(node.children) ? node.children : [];
+      for (const child of list) {
+        const cid = child?._id || child;
+        if (cid) {
+          ids.push(String(cid));
+          ids = ids.concat(collectDescendantIds(child));
+        }
+      }
+      return ids;
+    };
 
-    const categoryIds = [category._id, ...childIds];
+    const categoryIds = [String(category._id), ...collectDescendantIds(category)];
 
     const [productBatches, attributes, catalog] = await Promise.all([
       Promise.all(

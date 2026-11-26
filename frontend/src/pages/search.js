@@ -150,7 +150,8 @@ export const getServerSideProps = async (context) => {
 
     // Sanitize all data to prevent serialization issues
     const sanitizedAttributes = sanitizeData(attributes) || [];
-    const sanitizedProducts = sanitizeData(data?.products) || [];
+    const rawProducts = Array.isArray(data) ? data : data?.products || [];
+    const sanitizedProducts = sanitizeData(rawProducts) || [];
 
     return {
       props: {

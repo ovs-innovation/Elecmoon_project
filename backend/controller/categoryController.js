@@ -136,13 +136,9 @@ const getCategoryBySlug = async (req, res) => {
       return res.status(404).send({ message: "Category not found." });
     }
 
-    const children = await Category.find({
-      parentId: String(category._id),
-      status: "show",
-    }).select("_id name slug icon parentId");
-
+    const allCategories = await Category.find({ status: "show" });
     const payload = category.toObject ? category.toObject() : { ...category };
-    payload.children = children;
+    payload.children = readyToParentAndChildrenCategory(allCategories, category._id);
     if (!payload.slug) {
       payload.slug = slugifyCategoryName(payload.name);
     }

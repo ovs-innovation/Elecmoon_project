@@ -4,6 +4,7 @@ import Image from "next/image";
 import { FiChevronRight, FiPackage } from "react-icons/fi";
 import { getCategorySearchUrl } from "@utils/categoryUrl";
 import { isCloudinaryUrl, optimizeImageUrl } from "@utils/cloudinaryImage";
+import useUtilsFunction from "@hooks/useUtilsFunction";
 
 const SubcategoryCard = ({
   subcategory,
@@ -13,6 +14,7 @@ const SubcategoryCard = ({
   onClick,
 }) => {
   const [imgFailed, setImgFailed] = useState(false);
+  const { showingTranslateValue } = useUtilsFunction();
 
   const rawImage = subcategory?.icon || previewImage;
   const showImage = rawImage && !imgFailed;
@@ -23,6 +25,8 @@ const SubcategoryCard = ({
     name,
     subcategory?.slug
   );
+
+  const subChildren = Array.isArray(subcategory?.children) ? subcategory.children : [];
 
   return (
     <Link
@@ -56,6 +60,26 @@ const SubcategoryCard = ({
           <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5 leading-normal">
             {description}
           </p>
+        ) : null}
+        {subChildren.length > 0 ? (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {subChildren.slice(0, 2).map((sc) => {
+              const scName = showingTranslateValue(sc.name) || sc.slug || "";
+              return (
+                <span
+                  key={sc._id}
+                  className="text-[9px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-[100px]"
+                >
+                  {scName}
+                </span>
+              );
+            })}
+            {subChildren.length > 2 && (
+              <span className="text-[9px] text-gray-400 font-semibold self-center">
+                +{subChildren.length - 2}
+              </span>
+            )}
+          </div>
         ) : null}
       </div>
 

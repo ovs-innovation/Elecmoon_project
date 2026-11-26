@@ -105,21 +105,26 @@ const RequestAQuote = () => {
   };
 
   return (
-    <Layout title="Request A Quote" description="Request a quote for Test & Tag services in Melbourne">
+    <Layout title="Request A Quote" description="Request a quote for bulk electronic components, battery packs, and industrial solutions from Elecmoon">
       {/* Hero */}
-      <div className="relative bg-[#111] text-white min-h-[380px] flex items-center">
-        <Image
-          src="https://www.Elecmoon.com.au/wp-content/uploads/al_opt_content/IMAGE/www.Elecmoon.com.au/wp-content/uploads/2025/02/male-electrician-works-switchboard-with-electrical-connecting-cable_169016-15086-768x512.jpg.bv.webp"
-          alt="Request a Quote"
-          fill
-          className="object-cover opacity-40"
-          priority
-        />
-        <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-10 py-16 w-full text-center">
-          <h5  className="text-3xl sm:text-4xl lg:text-4xl font-bold mb-6 uppercase">
-            Request A Quote
-          </h5>
-          <div className="w-40 h-0.5 bg-white item-center mx-auto" />
+      <div className="relative bg-[#0b1d3d] text-white py-16 lg:py-24 overflow-hidden border-b border-white/5">
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-blue-500/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-1/3 h-full bg-red-500/10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
+
+        <div className="relative max-w-screen-2xl mx-auto px-4 sm:px-10 text-center">
+          <div className="inline-flex items-center gap-2 text-[11px] font-bold text-white/70 uppercase tracking-widest mb-4 bg-white/10 px-4 py-1.5 rounded-full border border-white/15 backdrop-blur-sm">
+            <span>Home</span>
+            <span>/</span>
+            <span className="text-[#ED1C24]">Quote</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black !text-white mb-4 tracking-tight uppercase">
+            Request A <span className="text-[#ED1C24]">Quote</span>
+          </h1>
+          <div className="w-20 h-1 bg-[#ED1C24] mx-auto mb-4 rounded-full" />
+          <p className="text-white/80 max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
+            Need custom battery configurations, bulk electronic component orders, or B2B pricing? Fill out the details below.
+          </p>
         </div>
       </div>
 
@@ -128,7 +133,7 @@ const RequestAQuote = () => {
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-10 py-12 lg:py-16 grid lg:grid-cols-3 gap-10">
           <div className="lg:col-span-2">
             <h2 className="text-2xl lg:text-2xl font-bold text-gray-900 mb-6">
-              Request a Quote - Equipment Test and Tag in Melbourne
+              Request a Custom Quote - Elecmoon Industrial Solutions
             </h2>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div className="grid md:grid-cols-2 gap-4">

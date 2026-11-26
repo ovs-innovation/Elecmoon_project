@@ -110,6 +110,20 @@ const CategoryDrawerItem = ({ title, icon, nested = [], id, slug }) => {
             {nested.map((child) => {
               const cName = showingTranslateValue(child.name);
               if (!cName) return null;
+              const hasSubKids = child.children && child.children.length > 0;
+              if (hasSubKids) {
+                return (
+                  <li key={child._id} className="pt-1">
+                    <CategoryDrawerItem
+                      title={cName}
+                      icon={child.icon}
+                      nested={child.children}
+                      id={child._id}
+                      slug={child.slug}
+                    />
+                  </li>
+                );
+              }
               return (
                 <li key={child._id}>
                   <button

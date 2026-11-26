@@ -13,26 +13,28 @@ const useError = () => {
       `handleErrorNotification, error on ${from}`,
       err?.response?.data?.message || err?.message
     );
+    const msg = err?.response?.data?.message || "";
     if (
-      err?.response?.data?.message === "jwt expired" ||
-      err?.response?.data?.message === "jwt malformed" ||
-      err?.response?.data?.message === "invalid signature" ||
-      err?.response?.data?.message === "Unauthorized Access!"
+      err?.response?.status === 401 ||
+      msg === "jwt expired" ||
+      msg === "jwt malformed" ||
+      msg === "invalid signature" ||
+      msg === "Unauthorized Access!" ||
+      msg === "Invalid session. Please sign in again." ||
+      msg === "Your session has expired. Please sign in again." ||
+      msg === "Authorization token is required."
     ) {
-      console.log("inside", err?.response?.data?.message);
+      console.log("inside 401 / session expired", msg);
       dispatch({ type: "USER_LOGOUT" });
       Cookies.remove("adminInfo");
+      notifyError(msg || "Your session has expired. Please sign in again.", time);
 
-      // notifyError("Your Session is expired! Please Click on Login again");
       const timeoutId = setTimeout(() => {
-        // history?.replace(`/login`);
-        window.location.replace(
-          `https://${import.meta.env.VITE_APP_ADMIN_DOMAIN}/login`
-        );
-      }, 2500);
+        window.location.replace("/login");
+      }, 1500);
       return () => clearTimeout(timeoutId);
     } else {
-      notifyError(err?.response?.data?.message || err?.message, time);
+      notifyError(msg || err?.message, time);
     }
   };
 

@@ -292,7 +292,7 @@ const Orders = () => {
         <TableLoading row={12} col={7} width={160} height={20} />
       ) : error ? (
         <span className="text-center mx-auto text-red-500">{error}</span>
-      ) : serviceData?.length !== 0 ? (
+      ) : data?.orders?.length > 0 || serviceData?.length !== 0 ? (
         <TableContainer className="mb-8 dark:bg-gray-900">
           <Table>
             <TableHeader>
@@ -311,7 +311,7 @@ const Orders = () => {
               </tr>
             </TableHeader>
 
-            <OrderTable orders={dataTable} />
+            <OrderTable orders={data?.orders || dataTable} />
           </Table>
 
           <TableFooter>
